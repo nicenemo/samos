@@ -1,0 +1,105 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Install and Configure Docker Stack & Network (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    docker_users:
+      - "{{ target_user }}"
+      - "{{ secondary_user }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Package Installation
+    # -------------------------------------------------------------------------
+    - name: Install Docker and Docker Compose
+      community.general.pacman:
+        name:
+          - docker
+          - docker-compose
+        state: present
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    # -------------------------------------------------------------------------
+    # 2. Directory Provisioning
+    # -------------------------------------------------------------------------
+    - name: Ensure Docker compose directory exists
+      ansible.builtin.file:
+        path: /opt/compose
+        state: directory
+        owner: root
+        group: docker
+        mode: '0775'
+
+    - name: Ensure Docker configuration directory exists
+      ansible.builtin.file:
+        path: /etc/docker
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    # -------------------------------------------------------------------------
+    # 3. Daemon Configuration
+    # -------------------------------------------------------------------------
+    - name: Configure Docker daemon settings
+      ansible.builtin.copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            }
+          }
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart Docker service
+
+    # -------------------------------------------------------------------------
+    # 4. Service Activation & User Delegation
+    # -------------------------------------------------------------------------
+    - name: Reset systemd failed state for Docker
+      ansible.builtin.command: systemctl reset-failed docker.service docker.socket
+      changed_when: false
+      failed_when: false
+
+    - name: Ensure Docker socket and service are enabled and started
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - docker.socket
+        - docker.service
+
+    - name: Add target users to docker group
+      ansible.builtin.user:
+        name: "{{ item }}"
+        groups: docker
+        append: true
+      loop: "{{ docker_users }}"
+
+    # -------------------------------------------------------------------------
+    # 5. Global Docker Network Provisioning
+    # -------------------------------------------------------------------------
+    - name: Create global internal Docker network
+      community.docker.docker_network:
+        name: internal-net
+        driver: bridge
+        driver_options:
+          com.docker.network.bridge.name: br-internal
+        state: present
+
+  handlers:
+    - name: Restart Docker service
+      ansible.builtin.systemd:
+        name: docker.service
+        state: restarted

@@ -1,0 +1,25 @@
+services:
+  opencode:
+    image: ghcr.io/opencoder-ai/opencode:latest
+    container_name: opencode
+    restart: unless-stopped
+    # Geen 'ports:'-mapping meer! Enkel bereikbaar via Traefik over internal-net.
+    environment:
+      - PORT=8080
+      - OPENAI_API_BASE=http://host.docker.internal:11434/v1
+    volumes:
+      - /var/lib/opencode-workspace:/workspace
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - internal-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opencode.rule=Host(`{{ opencode_hostname }}`)"
+      - "traefik.http.routers.opencode.entrypoints=websecure"
+      - "traefik.http.routers.opencode.tls=true"
+      - "traefik.http.services.opencode.loadbalancer.server.port=8080"
+
+networks:
+  internal-net:
+    external: true

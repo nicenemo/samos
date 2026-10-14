@@ -1,0 +1,79 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Install Optimized CachyOS Kernel (Framework 13 AI 300 - systemd-boot)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Package Installation
+    # -------------------------------------------------------------------------
+    - name: Refresh pacman sync databases
+      ansible.builtin.command:
+        cmd: pacman -Sy
+      changed_when: true
+
+    - name: Install main optimized CachyOS kernel and headers alongside LTS
+      community.general.pacman:
+        name:
+          - linux-cachyos
+          - linux-cachyos-headers
+          - amd-ucode
+        state: present
+
+    # -------------------------------------------------------------------------
+    # 2. Kernel Command Line (systemd-boot)
+    # -------------------------------------------------------------------------
+    - name: Ensure /etc/kernel/cmdline exists
+      ansible.builtin.file:
+        path: /etc/kernel/cmdline
+        state: touch
+        owner: root
+        group: root
+        mode: '0644'
+        modification_time: preserve
+        access_time: preserve
+
+    - name: Apply Framework AI 300 kernel performance parameters
+      ansible.builtin.lineinfile:
+        path: /etc/kernel/cmdline
+        backrefs: true
+        regexp: '^(.*)$'
+        line: '\1 amd_pstate=active mitigations=off pci=rebar split_lock_detect=off'
+      notify:
+        - Rebuild initramfs
+        - Update systemd-boot entries
+
+    # -------------------------------------------------------------------------
+    # 3. DKMS Rebuild & Initramfs
+    # -------------------------------------------------------------------------
+    - name: Find target module directory for linux-cachyos
+      ansible.builtin.find:
+        paths: /usr/lib/modules
+        file_type: directory
+        patterns: "*cachyos*"
+        excludes: "*lts*"
+      register: kernel_module_dirs
+
+    - name: Extract target kernel release string
+      ansible.builtin.set_fact:
+        target_kernel_release: "{{ kernel_module_dirs.files | map(attribute='path') | map('basename') | first }}"
+      when: kernel_module_dirs.files | length > 0
+
+    - name: Rebuild configured DKMS modules for new kernel
+      ansible.builtin.command:
+        cmd: "dkms autoinstall -k {{ target_kernel_release }}"
+      register: dkms_result
+      changed_when: dkms_result.rc == 0
+      when: target_kernel_release is defined
+
+  handlers:
+    - name: Rebuild initramfs
+      ansible.builtin.command: mkinitcpio -P
+      changed_when: true
+
+    - name: Update systemd-boot entries
+      ansible.builtin.command: bootctl update
+      changed_when: true
+      failed_when: false

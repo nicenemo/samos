@@ -1,0 +1,25 @@
+services:
+  openclaw:
+    image: openclaw/openclaw:latest
+    container_name: openclaw
+    restart: unless-stopped
+    # Geen 'ports:'-mapping meer!
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OPENCLAW_WORKSPACE=/app/workspace
+    volumes:
+      - /var/lib/openclaw-data:/app/workspace
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - internal-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openclaw.rule=Host(`{{ openclaw_hostname }}`)"
+      - "traefik.http.routers.openclaw.entrypoints=websecure"
+      - "traefik.http.routers.openclaw.tls=true"
+      - "traefik.http.services.openclaw.loadbalancer.server.port=8080"
+
+networks:
+  internal-net:
+    external: true

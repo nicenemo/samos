@@ -1,0 +1,41 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Deploy OpenCode Stack (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    domain_name: "{{ base_domain | default('lt.hanskruse.eu') }}"
+    opencode_hostname: "opencode.{{ domain_name }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Directory Provisioning
+    # -------------------------------------------------------------------------
+    - name: Ensure OpenCode compose and workspace directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: docker
+        mode: '0775'
+      loop:
+        - /opt/compose/opencode
+        - /var/lib/opencode-workspace
+
+    # -------------------------------------------------------------------------
+    # 2. Render Template & Deploy Container Stack
+    # -------------------------------------------------------------------------
+    - name: Deploy OpenCode docker-compose file
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/docker-compose-opencode.j2"
+        dest: /opt/compose/opencode/docker-compose.yml
+        owner: root
+        group: docker
+        mode: '0640'
+
+    - name: Start OpenCode service via Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /opt/compose/opencode
+        state: present

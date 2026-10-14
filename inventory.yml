@@ -1,0 +1,21 @@
+all:
+  vars:
+    base_domain: lt.hanskruse.eu
+    bootstrap_user: kruse
+    ansible_management_user: myansibleuser
+    ansible_user: "{{ ansible_management_user }}"
+    ansible_python_interpreter: /usr/bin/python3
+    common_packages:
+      - neovim
+      - tmux
+      - btop
+      - wget
+      - networkmanager
+
+  children:
+    systems:
+      hosts:
+        localhost:
+          ansible_connection: local
+          target_user: kruse
+          secondary_user: giesen

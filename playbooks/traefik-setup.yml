@@ -1,0 +1,68 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Deploy Traefik Reverse Proxy Stack (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    domain_name: "{{ base_domain | default('lt.hanskruse.eu') }}"
+    traefik_hostname: "traefik.{{ domain_name }}"
+    local_cert_dir: "/etc/ssl/local_certs"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Directory Provisioning
+    # -------------------------------------------------------------------------
+    - name: Ensure dedicated local certificates directory exists
+      ansible.builtin.file:
+        path: "{{ local_cert_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Ensure Traefik compose, config, and log directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: docker
+        mode: '0775'
+      loop:
+        - /opt/compose/traefik
+        - /opt/compose/traefik/config
+        - /opt/compose/traefik/dynamic
+        - /opt/compose/traefik/log
+
+    # -------------------------------------------------------------------------
+    # 2. Render Configurations & Deploy Container Stack
+    # -------------------------------------------------------------------------
+    - name: Deploy Traefik main configuration (traefik.yaml)
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/traefik.yaml.j2"
+        dest: /opt/compose/traefik/config/traefik.yaml
+        owner: root
+        group: docker
+        mode: '0640'
+
+    - name: Deploy Traefik dynamic TLS configuration
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/traefik-dynamic-tls.yaml.j2"
+        dest: /opt/compose/traefik/dynamic/tls.yaml
+        owner: root
+        group: docker
+        mode: '0640'
+
+    - name: Deploy Traefik docker-compose file
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/docker-compose-traefik.j2"
+        dest: /opt/compose/traefik/docker-compose.yml
+        owner: root
+        group: docker
+        mode: '0640'
+
+    - name: Start Traefik service via Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /opt/compose/traefik
+        state: present

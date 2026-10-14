@@ -1,0 +1,41 @@
+#!/usr/bin/env ansible-playbook
+---
+# =============================================================================
+# Master Teardown Playbook
+# =============================================================================
+
+- name: Import Openclaw Teardown
+  ansible.builtin.import_playbook: playbooks/openclaw-teardown.yml
+
+- name: Import Opencode Teardown
+  ansible.builtin.import_playbook: playbooks/opencode-teardown.yml
+
+- name: Import Hermes Teardown
+  ansible.builtin.import_playbook: playbooks/hermes-teardown.yml
+
+- name: Import Homepage Teardown
+  ansible.builtin.import_playbook: playbooks/homepage-teardown.yml
+
+- name: Import Traefik Reverse Proxy Teardown
+  ansible.builtin.import_playbook: playbooks/traefik-teardown.yml
+
+- name: Import CA & Local SSL Teardown
+  ansible.builtin.import_playbook: playbooks/ca-teardown.yml
+
+- name: Import Docker Teardown
+  ansible.builtin.import_playbook: playbooks/docker-teardown.yml
+
+- name: Import Flatpak Teardown
+  ansible.builtin.import_playbook: playbooks/flatpak-teardown.yml
+
+- name: Import Chrome Teardown
+  ansible.builtin.import_playbook: playbooks/chrome-teardown.yml
+
+- name: Import ROCm & NPU Teardown
+  ansible.builtin.import_playbook: playbooks/rocm-npu-teardown.yml
+
+- name: Import Kernel Teardown
+  ansible.builtin.import_playbook: playbooks/kernel-teardown.yml
+
+- name: Import Base System Teardown
+  ansible.builtin.import_playbook: playbooks/base-teardown.yml

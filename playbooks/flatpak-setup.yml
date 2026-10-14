@@ -1,0 +1,27 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Install and Configure Flatpak & Flathub (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Core Package Installation
+    # -------------------------------------------------------------------------
+    - name: Ensure Flatpak and desktop integration portals are installed
+      community.general.pacman:
+        name:
+          - flatpak
+          - xdg-desktop-portal
+        state: present
+
+    # -------------------------------------------------------------------------
+    # 2. Remote Repository Configuration
+    # -------------------------------------------------------------------------
+    - name: Ensure Flathub repository is present system-wide
+      community.general.flatpak_remote:
+        name: flathub
+        state: present
+        flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+        method: system

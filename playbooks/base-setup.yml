@@ -1,0 +1,118 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Apply Base System Optimizations and Users (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Package Management & Keyring Maintenance
+    # -------------------------------------------------------------------------
+    - name: Initialize pacman keyring if missing or unpopulated
+      ansible.builtin.command:
+        cmd: pacman-key --init
+        creates: /etc/pacman.d/gnupg/trustdb.gpg
+
+    - name: Populate default Arch and CachyOS keyrings
+      ansible.builtin.command:
+        cmd: pacman-key --populate archlinux cachyos
+      changed_when: false
+
+    - name: Clean pacman sync databases and package cache
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/pacman/sync
+        - /var/cache/pacman/pkg
+
+    - name: Re-create clean pacman directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /var/lib/pacman/sync
+        - /var/cache/pacman/pkg
+
+    - name: Force refresh pacman databases and update keyrings
+      ansible.builtin.command:
+        cmd: pacman -Sy --noconfirm archlinux-keyring cachyos-keyring
+      changed_when: true
+
+    - name: Upgrade all system packages
+      ansible.builtin.command:
+        cmd: pacman -Syu --noconfirm
+      register: pacman_upgrade_result
+      changed_when: "'there is nothing to do' not in pacman_upgrade_result.stdout"
+
+    - name: Install common packages
+      community.general.pacman:
+        name: "{{ common_packages | default([]) }}"
+        state: present
+
+    # -------------------------------------------------------------------------
+    # 2. System Groups & User Provisioning
+    # -------------------------------------------------------------------------
+    - name: Create required system groups
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - wheel
+        - input
+        - audio
+        - video
+        - render
+
+    - name: Ensure target user exists and belongs to system groups
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        groups: wheel,input,audio,video,render
+        append: true
+
+    - name: Check if secondary user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ secondary_user }}"
+      register: getent_user
+      ignore_errors: true
+
+    - name: Generate random password for secondary user if missing
+      ansible.builtin.set_fact:
+        generated_user_password: "{{ lookup('ansible.builtin.password', '/dev/null length=20 chars=ascii_letters,digits') }}"
+      when: getent_user.failed | default(false)
+
+    - name: Provision secondary user
+      ansible.builtin.user:
+        name: "{{ secondary_user }}"
+        shell: /bin/bash
+        groups: wheel,input,audio,video,render
+        append: true
+        password: "{{ generated_user_password | password_hash('sha512') }}"
+        state: present
+      when: getent_user.failed | default(false)
+
+    # -------------------------------------------------------------------------
+    # 3. Global System Environment & Profile Config
+    # -------------------------------------------------------------------------
+    - name: Ensure /etc/environment.d exists
+      ansible.builtin.file:
+        path: /etc/environment.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Set Neovim as global default editor
+      ansible.builtin.copy:
+        dest: /etc/profile.d/editor.sh
+        content: |
+          export EDITOR=nvim
+          export VISUAL=nvim
+        owner: root
+        group: root
+        mode: '0644'

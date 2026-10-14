@@ -1,0 +1,27 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown OpenClaw Stack & Purge Data (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Container Termination
+    # -------------------------------------------------------------------------
+    - name: Stop and remove OpenClaw Docker Compose stack
+      community.docker.docker_compose_v2:
+        project_src: /opt/compose/openclaw
+        state: absent
+      failed_when: false
+
+    # -------------------------------------------------------------------------
+    # 2. Storage Cleanup
+    # -------------------------------------------------------------------------
+    - name: Purge OpenClaw compose and workspace directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /opt/compose/openclaw
+        - /var/lib/openclaw-data

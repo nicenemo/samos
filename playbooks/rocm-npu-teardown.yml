@@ -1,0 +1,51 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown AMD ROCm & NPU Configuration (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Environment & Kernel Cmdline Cleanup
+    # -------------------------------------------------------------------------
+    - name: Remove ROCm/NPU environment file
+      ansible.builtin.file:
+        path: /etc/environment.d/50-rocm-npu.conf
+        state: absent
+
+    - name: Remove auto-load configuration for amdxdna
+      ansible.builtin.file:
+        path: /etc/modules-load.d/amdxdna.conf
+        state: absent
+
+    - name: Remove amdgpu.gttsize parameter from /etc/kernel/cmdline
+      ansible.builtin.replace:
+        path: /etc/kernel/cmdline
+        regexp: '\s*(amdgpu\.gttsize=81922)'
+        replace: ''
+      notify:
+        - Rebuild initramfs
+        - Update systemd-boot entries
+
+    # -------------------------------------------------------------------------
+    # 2. Package Purge
+    # -------------------------------------------------------------------------
+    - name: Remove ROCm and XDNA NPU packages
+      community.general.pacman:
+        name:
+          - rocm-hip-runtime
+          - rocm-opencl-runtime
+          - rocm-smi-lib
+          - amd-xdna-driver-dkms
+        state: absent
+
+  handlers:
+    - name: Rebuild initramfs
+      ansible.builtin.command: mkinitcpio -P
+      changed_when: true
+
+    - name: Update systemd-boot entries
+      ansible.builtin.command: bootctl update
+      changed_when: true
+      failed_when: false

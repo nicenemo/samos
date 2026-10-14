@@ -1,0 +1,27 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Hermes Agent Stack & Purge Data (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Container Termination
+    # -------------------------------------------------------------------------
+    - name: Stop and remove Hermes Agent Docker Compose stack
+      community.docker.docker_compose_v2:
+        project_src: /opt/compose/hermes
+        state: absent
+      failed_when: false
+
+    # -------------------------------------------------------------------------
+    # 2. Storage Cleanup
+    # -------------------------------------------------------------------------
+    - name: Purge Hermes Agent compose and memory directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /opt/compose/hermes
+        - /var/lib/hermes-data

@@ -1,0 +1,24 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Traefik Reverse Proxy Stack & Purge Config (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Container Termination
+    # -------------------------------------------------------------------------
+    - name: Stop and remove Traefik Docker Compose stack
+      community.docker.docker_compose_v2:
+        project_src: /opt/compose/traefik
+        state: absent
+      failed_when: false
+
+    # -------------------------------------------------------------------------
+    # 2. Directory & Log Cleanup
+    # -------------------------------------------------------------------------
+    - name: Purge Traefik compose and configuration directory
+      ansible.builtin.file:
+        path: /opt/compose/traefik
+        state: absent

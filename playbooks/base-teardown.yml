@@ -1,0 +1,39 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Revert Base System Configuration (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Editor Profile Cleanup
+    # -------------------------------------------------------------------------
+    - name: Remove editor profile file
+      ansible.builtin.file:
+        path: /etc/profile.d/editor.sh
+        state: absent
+
+    # -------------------------------------------------------------------------
+    # 2. Base Packages Teardown
+    # -------------------------------------------------------------------------
+    - name: Filter base package removal list (excluding networkmanager)
+      ansible.builtin.set_fact:
+        target_base_packages: "{{ (common_packages | default([])) | reject('equalto', 'networkmanager') | list }}"
+
+    - name: Query installed base packages
+      ansible.builtin.command:
+        cmd: "pacman -Qq {{ target_base_packages | join(' ') }}"
+      register: installed_base_check
+      changed_when: false
+      failed_when: false
+      when: target_base_packages | length > 0
+
+    - name: Remove base packages via cascade removal
+      ansible.builtin.command:
+        cmd: "pacman -Rcn --noconfirm {{ installed_base_check.stdout_lines | join(' ') }}"
+      register: pacman_remove_base
+      changed_when: "'removing' in pacman_remove_base.stdout"
+      when:
+        - installed_base_check.stdout_lines is defined
+        - installed_base_check.stdout_lines | length > 0

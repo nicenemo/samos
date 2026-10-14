@@ -1,0 +1,53 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Local SSL Certs, Trust Store & /etc/hosts (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    domain_name: "{{ base_domain }}"
+    cert_dir: "/etc/ssl/local_certs"
+    ca_trust_dir: "/etc/ca-certificates/trust-source/anchors"
+
+    local_domains:
+      - "{{ domain_name }}"
+      - "traefik.{{ domain_name }}"
+      - "start.{{ domain_name }}"
+      - "hermes.{{ domain_name }}"
+      - "opencode.{{ domain_name }}"
+      - "openclaw.{{ domain_name }}"
+      - "ollama.{{ domain_name }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. System Trust Store Cleanup
+    # -------------------------------------------------------------------------
+    - name: Remove Root CA from CachyOS trust store
+      ansible.builtin.file:
+        path: "{{ ca_trust_dir }}/local-ca.crt"
+        state: absent
+      notify: Update CachyOS certificate store
+
+    # -------------------------------------------------------------------------
+    # 2. Local Certificate Directory Cleanup
+    # -------------------------------------------------------------------------
+    - name: Purge local certificates directory
+      ansible.builtin.file:
+        path: "{{ cert_dir }}"
+        state: absent
+
+    # -------------------------------------------------------------------------
+    # 3. /etc/hosts Cleanup
+    # -------------------------------------------------------------------------
+    - name: Remove local domain entries from /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: ".*\\s{{ item }}$"
+        state: absent
+      loop: "{{ local_domains }}"
+
+  handlers:
+    - name: Update CachyOS certificate store
+      ansible.builtin.command: update-ca-trust
+      changed_when: true

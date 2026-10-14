@@ -1,0 +1,75 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Google Chrome Flatpak (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    target_users:
+      - name: "{{ target_user }}"
+        group: "{{ target_user }}"
+      - name: "{{ secondary_user }}"
+        group: "{{ secondary_user }}"
+    purge_user_data: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Ensure Ansible Remote Tmp Directories Exist
+    # -------------------------------------------------------------------------
+    - name: Ensure Ansible remote tmp directory exists for target users
+      ansible.builtin.file:
+        path: "/home/{{ item.name }}/.ansible/tmp"
+        state: directory
+        owner: "{{ item.name }}"
+        group: "{{ item.group }}"
+        mode: '0700'
+      loop: "{{ target_users }}"
+
+    # -------------------------------------------------------------------------
+    # 2. Remove CLI Shortcut
+    # -------------------------------------------------------------------------
+    - name: Remove global symlink for google-chrome CLI command
+      ansible.builtin.file:
+        path: /usr/local/bin/google-chrome
+        state: absent
+
+    # -------------------------------------------------------------------------
+    # 3. Remove Flatpak Application
+    # -------------------------------------------------------------------------
+    - name: Remove Google Chrome Flatpak application
+      community.general.flatpak:
+        name: com.google.Chrome
+        state: absent
+        method: system
+
+    # -------------------------------------------------------------------------
+    # 4. Purge Home Directory Config & Cache Data
+    # -------------------------------------------------------------------------
+    - name: Remove Chrome user configuration and cache directories
+      ansible.builtin.file:
+        path: "/home/{{ item[0].name }}/{{ item[1] }}"
+        state: absent
+      loop: "{{ target_users | product([
+        '.config/google-chrome',
+        '.cache/google-chrome',
+        '.var/app/com.google.Chrome'
+      ]) | list }}"
+      when: purge_user_data | bool
+
+    # -------------------------------------------------------------------------
+    # 5. Refresh Desktop & Launcher Databases
+    # -------------------------------------------------------------------------
+    - name: Update system desktop database after removal
+      ansible.builtin.command:
+        cmd: update-desktop-database /var/lib/flatpak/exports/share/applications
+      changed_when: false
+      failed_when: false
+
+    - name: Refresh KDE launcher cache after removal
+      ansible.builtin.command:
+        cmd: kbuildsycoca6 --noincremental
+      become_user: "{{ item.name }}"
+      loop: "{{ target_users }}"
+      changed_when: false
+      failed_when: false

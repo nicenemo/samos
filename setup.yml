@@ -1,0 +1,41 @@
+#!/usr/bin/env ansible-playbook
+---
+# =============================================================================
+# Master Provisioning Playbook
+# =============================================================================
+
+- name: Import Base Setup
+  ansible.builtin.import_playbook: playbooks/base-setup.yml
+
+- name: Import Kernel Setup
+  ansible.builtin.import_playbook: playbooks/kernel-setup.yml
+
+- name: Import ROCm & NPU Setup
+  ansible.builtin.import_playbook: playbooks/rocm-npu-setup.yml
+
+- name: Import Chrome Setup
+  ansible.builtin.import_playbook: playbooks/chrome-setup.yml
+
+- name: Import Flatpak Setup
+  ansible.builtin.import_playbook: playbooks/flatpak-setup.yml
+
+- name: Import Docker Setup
+  ansible.builtin.import_playbook: playbooks/docker-setup.yml
+
+- name: Import CA & Local SSL Setup
+  ansible.builtin.import_playbook: playbooks/ca-setup.yml
+
+- name: Import Traefik Reverse Proxy Setup
+  ansible.builtin.import_playbook: playbooks/traefik-setup.yml
+
+- name: Import Homepage Setup
+  ansible.builtin.import_playbook: playbooks/homepage-setup.yml
+
+- name: Import Hermes Setup
+  ansible.builtin.import_playbook: playbooks/hermes-setup.yml
+
+- name: Import Opencode Setup
+  ansible.builtin.import_playbook: playbooks/opencode-setup.yml
+
+- name: Import Openclaw Setup
+  ansible.builtin.import_playbook: playbooks/openclaw-setup.yml

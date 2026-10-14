@@ -1,0 +1,34 @@
+# Ansible & Python
+*.pyc
+*.pyo
+__pycache__/
+.ansible/
+.ansible-retry/
+*.retry
+*.log
+
+# Dynamisch gegenereerde certificaten & sleutels (voorkom lekken van private keys)
+certs/
+*.key
+*.pem
+*.csr
+*.crt
+*.srl
+
+# Sensitieve variabelen en vaults
+*vault*.yml
+*vault*.yaml
+.env
+.env.*
+
+# OS & Editor specifieke bestanden
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker / Compose runtime data
+*.tar
+*.tar.gz

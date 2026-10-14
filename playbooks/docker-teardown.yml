@@ -1,0 +1,70 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Docker Service, Network & Purge Data (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    docker_users:
+      - "{{ target_user }}"
+      - "{{ secondary_user }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Network Removal
+    # -------------------------------------------------------------------------
+    - name: Remove internal Docker network
+      community.docker.docker_network:
+        name: internal-net
+        state: absent
+      failed_when: false
+
+    # -------------------------------------------------------------------------
+    # 2. Service Termination
+    # -------------------------------------------------------------------------
+    - name: Stop and disable Docker service and socket
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      loop:
+        - docker.service
+        - docker.socket
+      failed_when: false
+
+    # -------------------------------------------------------------------------
+    # 3. Package Purge & Systemd Cleanup
+    # -------------------------------------------------------------------------
+    - name: Remove Docker packages
+      community.general.pacman:
+        name:
+          - docker
+          - docker-compose
+        state: absent
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    # -------------------------------------------------------------------------
+    # 4. User Access Revocation
+    # -------------------------------------------------------------------------
+    - name: Remove users from docker group
+      ansible.builtin.command:
+        cmd: "gpasswd -d {{ item }} docker"
+      loop: "{{ docker_users }}"
+      changed_when: true
+      failed_when: false
+
+    # -------------------------------------------------------------------------
+    # 5. Configuration & Storage Removal
+    # -------------------------------------------------------------------------
+    - name: Remove Docker directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/docker
+        - /opt/compose
+        - /var/lib/docker

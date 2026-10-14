@@ -1,0 +1,140 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Setup Local SSL Certs, Vogon CA, System Trust & /etc/hosts (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    domain_name: "{{ base_domain }}"
+    cert_dir: "/etc/ssl/local_certs"
+    ca_trust_dir: "/etc/ca-certificates/trust-source/anchors"
+    wildcard_domain: "*.{{ domain_name }}"
+
+    # Vogon Humor Metadata
+    ca_common_name: "B.I.R.D. (BIRD Interstellar Recursive Defenestration) Root CA"
+    org_name: "Vogon Interplanetary Delay-Tolerant Network Bureau (RFC 9171)"
+    org_unit: "Department of Directing WireGuard-over-BLE HID Service 0x1812 Tunneling via Page 0x20 (HUD) over hid-ebpf via DTN Bundle Store-and-Forward to a Closed Window"
+    country: "NL"
+    locality: "Zelhem"
+
+    local_domains:
+      - "{{ domain_name }}"
+      - "traefik.{{ domain_name }}"
+      - "start.{{ domain_name }}"
+      - "hermes.{{ domain_name }}"
+      - "opencode.{{ domain_name }}"
+      - "openclaw.{{ domain_name }}"
+      - "ollama.{{ domain_name }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Directory Structure
+    # -------------------------------------------------------------------------
+    - name: Ensure dedicated local certs and CA trust directories exist
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        mode: "{{ item.mode }}"
+        owner: root
+        group: root
+      loop:
+        - { path: "{{ cert_dir }}", mode: '0700' }
+        - { path: "{{ ca_trust_dir }}", mode: '0755' }
+
+    # -------------------------------------------------------------------------
+    # 2. ROOT CA GENERATION
+    # -------------------------------------------------------------------------
+    - name: Generate Private Key for Root CA
+      community.crypto.openssl_privatekey:
+        path: "{{ cert_dir }}/local-ca.key"
+        type: RSA
+        size: 4096
+
+    - name: Generate CSR for Root CA
+      community.crypto.openssl_csr:
+        path: "{{ cert_dir }}/local-ca.csr"
+        privatekey_path: "{{ cert_dir }}/local-ca.key"
+        common_name: "{{ ca_common_name }}"
+        organization_name: "{{ org_name }}"
+        organizational_unit_name: "{{ org_unit }}"
+        country_name: "{{ country }}"
+        locality_name: "{{ locality }}"
+        basic_constraints:
+          - 'CA:TRUE'
+        basic_constraints_critical: true
+        key_usage:
+          - keyCertSign
+          - cRLSign
+
+    - name: Generate Root CA Certificate
+      community.crypto.x509_certificate:
+        path: "{{ cert_dir }}/local-ca.crt"
+        privatekey_path: "{{ cert_dir }}/local-ca.key"
+        csr_path: "{{ cert_dir }}/local-ca.csr"
+        provider: selfsigned
+        selfsigned_not_after: "+3650d"
+
+    # -------------------------------------------------------------------------
+    # 3. WILDCARD CERTIFICATE GENERATION (*.{{ base_domain }})
+    # -------------------------------------------------------------------------
+    - name: Generate Private Key for Wildcard Certificate
+      community.crypto.openssl_privatekey:
+        path: "{{ cert_dir }}/wildcard.key"
+        type: RSA
+        size: 2048
+
+    - name: Generate CSR for Wildcard Certificate
+      community.crypto.openssl_csr:
+        path: "{{ cert_dir }}/wildcard.csr"
+        privatekey_path: "{{ cert_dir }}/wildcard.key"
+        common_name: "{{ wildcard_domain }}"
+        organization_name: "{{ org_name }}"
+        organizational_unit_name: "{{ org_unit }}"
+        country_name: "{{ country }}"
+        locality_name: "{{ locality }}"
+        subject_alt_name:
+          - "DNS:{{ wildcard_domain }}"
+          - "DNS:{{ domain_name }}"
+          - "DNS:localhost"
+        key_usage:
+          - digitalSignature
+          - keyEncipherment
+        extended_key_usage:
+          - serverAuth
+
+    - name: Sign Wildcard Certificate with Root CA
+      community.crypto.x509_certificate:
+        path: "{{ cert_dir }}/wildcard.crt"
+        csr_path: "{{ cert_dir }}/wildcard.csr"
+        ownca_path: "{{ cert_dir }}/local-ca.crt"
+        ownca_privatekey_path: "{{ cert_dir }}/local-ca.key"
+        provider: ownca
+        ownca_not_after: "+825d"
+
+    # -------------------------------------------------------------------------
+    # 4. SYSTEM TRUST STORE ANCHORING
+    # -------------------------------------------------------------------------
+    - name: Copy Root CA to CachyOS / Arch trust store anchors
+      ansible.builtin.copy:
+        src: "{{ cert_dir }}/local-ca.crt"
+        dest: "{{ ca_trust_dir }}/local-ca.crt"
+        remote_src: true
+        mode: '0644'
+      notify: Update CachyOS certificate store
+
+    # -------------------------------------------------------------------------
+    # 5. /etc/hosts CONFIGURATION
+    # -------------------------------------------------------------------------
+    - name: Add local domain entries to /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: ".*\\s{{ item }}$"
+        line: "127.0.0.1 {{ item }}"
+        state: present
+      loop: "{{ local_domains }}"
+
+  handlers:
+    - name: Update CachyOS certificate store
+      ansible.builtin.command: update-ca-trust
+      changed_when: true

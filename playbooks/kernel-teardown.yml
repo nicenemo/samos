@@ -1,0 +1,46 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Optimized CachyOS Kernel & Revert to LTS (systemd-boot)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Fallback Kernel Preparation & Removal
+    # -------------------------------------------------------------------------
+    - name: Ensure linux-cachyos-lts kernel and headers are present
+      community.general.pacman:
+        name:
+          - linux-cachyos-lts
+          - linux-cachyos-lts-headers
+        state: present
+
+    - name: Remove main optimized CachyOS kernel and headers
+      community.general.pacman:
+        name:
+          - linux-cachyos
+          - linux-cachyos-headers
+        state: absent
+
+    # -------------------------------------------------------------------------
+    # 2. Kernel Command Line Revert
+    # -------------------------------------------------------------------------
+    - name: Revert performance kernel parameters from /etc/kernel/cmdline
+      ansible.builtin.replace:
+        path: /etc/kernel/cmdline
+        regexp: '\s*(amd_pstate=active|mitigations=off|pci=rebar|split_lock_detect=off)'
+        replace: ''
+      notify:
+        - Rebuild initramfs
+        - Update systemd-boot entries
+
+  handlers:
+    - name: Rebuild initramfs
+      ansible.builtin.command: mkinitcpio -P
+      changed_when: true
+
+    - name: Update systemd-boot entries
+      ansible.builtin.command: bootctl update
+      changed_when: true
+      failed_when: false

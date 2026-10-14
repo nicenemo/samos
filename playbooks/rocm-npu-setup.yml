@@ -1,0 +1,88 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Setup AMD ROCm & Ryzen AI NPU Driver Configuration (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Package Installation & DKMS Build
+    # -------------------------------------------------------------------------
+    - name: Install AMD ROCm and XDNA NPU driver packages
+      community.general.pacman:
+        name:
+          - rocm-hip-runtime
+          - rocm-opencl-runtime
+          - rocm-smi-lib
+          - amd-xdna-driver-dkms
+        state: present
+
+    - name: Detect all installed kernel versions
+      ansible.builtin.command: ls /usr/lib/modules
+      register: installed_kernels
+      changed_when: false
+
+    - name: Force DKMS autoinstall for all installed kernels
+      ansible.builtin.command: "dkms autoinstall -k {{ item }}"
+      loop: "{{ installed_kernels.stdout_lines }}"
+      register: dkms_install_out
+      changed_when: dkms_install_out.rc == 0
+      failed_when: false
+
+    # -------------------------------------------------------------------------
+    # 2. Kernel Parameter (80GB GTT / VRAM Pool for 96GB RAM)
+    # -------------------------------------------------------------------------
+    - name: Ensure /etc/kernel/cmdline exists
+      ansible.builtin.file:
+        path: /etc/kernel/cmdline
+        state: touch
+        owner: root
+        group: root
+        mode: '0644'
+        modification_time: preserve
+        access_time: preserve
+
+    - name: Configure amdgpu.gttsize=81922 in /etc/kernel/cmdline for systemd-boot
+      ansible.builtin.lineinfile:
+        path: /etc/kernel/cmdline
+        backrefs: true
+        regexp: '^(.*)$'
+        line: '\1 amdgpu.gttsize=81922'
+      notify:
+        - Rebuild initramfs
+        - Update systemd-boot entries
+
+    # -------------------------------------------------------------------------
+    # 3. Environment & Modprobe Configuration
+    # -------------------------------------------------------------------------
+    - name: Deploy ROCm and NPU system environment parameters
+      ansible.builtin.copy:
+        content: |
+          HSA_OVERRIDE_GFX_VERSION=11.5.0
+          HSA_ENABLE_SDMA=0
+          ROCM_PATH=/opt/rocm
+          AMD_SERIALIZE_KERNEL=0
+        dest: /etc/environment.d/50-rocm-npu.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Ensure AMD XDNA driver loads automatically on boot
+      ansible.builtin.copy:
+        content: |
+          amdxdna
+        dest: /etc/modules-load.d/amdxdna.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+  handlers:
+    - name: Rebuild initramfs
+      ansible.builtin.command: mkinitcpio -P
+      changed_when: true
+
+    - name: Update systemd-boot entries
+      ansible.builtin.command: bootctl update
+      changed_when: true
+      failed_when: false

@@ -1,0 +1,25 @@
+services:
+  hermes-agent:
+    image: nousresearch/hermes-agent:latest
+    container_name: hermes-agent
+    restart: unless-stopped
+    # Geen 'ports:'-mapping meer!
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - TELEGRAM_BOT_TOKEN={{ hermes_telegram_bot_token | default('') }}
+    volumes:
+      - /var/lib/hermes-data:/app/memory
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - internal-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hermes.rule=Host(`{{ hermes_hostname }}`)"
+      - "traefik.http.routers.hermes.entrypoints=websecure"
+      - "traefik.http.routers.hermes.tls=true"
+      - "traefik.http.services.hermes.loadbalancer.server.port=8080"
+
+networks:
+  internal-net:
+    external: true

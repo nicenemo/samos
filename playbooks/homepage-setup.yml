@@ -1,0 +1,55 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Deploy Homepage Stack (Framework 13 AI 300)
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    domain_name: "{{ base_domain }}"
+    homepage_hostname: "start.{{ domain_name }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Directory Provisioning
+    # -------------------------------------------------------------------------
+    - name: Ensure Homepage compose and config directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: docker
+        mode: '0775'
+      loop:
+        - /opt/compose/homepage
+        - /opt/compose/homepage/config
+
+    # -------------------------------------------------------------------------
+    # 2. Render Configurations & Deploy Container Stack
+    # -------------------------------------------------------------------------
+    - name: Deploy Homepage docker-compose file
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/docker-compose-homepage.j2"
+        dest: /opt/compose/homepage/docker-compose.yml
+        owner: root
+        group: docker
+        mode: '0640'
+
+    - name: Deploy Homepage configuration files
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/homepage-{{ item }}.yaml.j2"
+        dest: "/opt/compose/homepage/config/{{ item }}.yaml"
+        owner: root
+        group: docker
+        mode: '0640'
+      loop:
+        - settings
+        - services
+        - widgets
+        - docker
+        - bookmarks
+
+    - name: Start Homepage service via Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /opt/compose/homepage
+        state: present
