@@ -31,7 +31,7 @@
     # -------------------------------------------------------------------------
     # 2. Package Purge
     # -------------------------------------------------------------------------
-    - name: Remove ROCm and XDNA NPU packages
+    - name: Remove ROCm packages
       community.general.pacman:
         name:
           - rocm-hip-runtime
@@ -39,6 +39,7 @@
           - rocm-smi-lib
           - amd-xdna-driver-dkms
         state: absent
+      ignore_errors: true
 
   handlers:
     - name: Rebuild initramfs

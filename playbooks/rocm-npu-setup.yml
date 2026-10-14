@@ -9,14 +9,26 @@
     # -------------------------------------------------------------------------
     # 1. Package Installation & DKMS Build
     # -------------------------------------------------------------------------
-    - name: Install AMD ROCm and XDNA NPU driver packages
+    - name: Install official AMD ROCm packages
       community.general.pacman:
         name:
           - rocm-hip-runtime
           - rocm-opencl-runtime
           - rocm-smi-lib
-          - amd-xdna-driver-dkms
         state: present
+
+    - name: Check if amd-xdna-driver-dkms exists in active pacman repos
+      ansible.builtin.command:
+        cmd: pacman -Si amd-xdna-driver-dkms
+      register: xdna_pkg_check
+      changed_when: false
+      failed_when: false
+
+    - name: Install AMD XDNA NPU driver package via pacman if available
+      community.general.pacman:
+        name: amd-xdna-driver-dkms
+        state: present
+      when: xdna_pkg_check.rc == 0
 
     - name: Detect all installed kernel versions
       ansible.builtin.command: ls /usr/lib/modules

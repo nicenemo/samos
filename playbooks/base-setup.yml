@@ -19,25 +19,6 @@
         cmd: pacman-key --populate archlinux cachyos
       changed_when: false
 
-    - name: Clean pacman sync databases and package cache
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /var/lib/pacman/sync
-        - /var/cache/pacman/pkg
-
-    - name: Re-create clean pacman directories
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        owner: root
-        group: root
-        mode: '0755'
-      loop:
-        - /var/lib/pacman/sync
-        - /var/cache/pacman/pkg
-
     - name: Force refresh pacman databases and update keyrings
       ansible.builtin.command:
         cmd: pacman -Sy --noconfirm archlinux-keyring cachyos-keyring
