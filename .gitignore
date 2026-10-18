@@ -1,34 +1,78 @@
-# Ansible & Python
-*.pyc
-*.pyo
-__pycache__/
-.ansible/
-.ansible-retry/
-*.retry
-*.log
+# ==========================================
+# Editor & IDE Files
+# ==========================================
+# Neovim / Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+.netrwhist
+*.un~
+Session.vim
 
-# Dynamisch gegenereerde certificaten & sleutels (voorkom lekken van private keys)
-certs/
-*.key
-*.pem
-*.csr
-*.crt
-*.srl
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
 
-# Sensitieve variabelen en vaults
-*vault*.yml
-*vault*.yaml
-.env
-.env.*
-
-# OS & Editor specifieke bestanden
+# General OS files
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
-*.swp
-*.swo
 
-# Docker / Compose runtime data
-*.tar
-*.tar.gz
+# ==========================================
+# Backups & Temporary Files
+# ==========================================
+*.bak
+*.tmp
+*.temp
+*~
+*.orig
+*.rej
+
+# ==========================================
+# Ansible
+# ==========================================
+# Credentials & Secrets (Never commit unencrypted vault files)
+*.vault
+*.vault.yml
+*.vault.yaml
+.vault_pass
+.vault_password
+
+# Ansible Local Environment & Cache
+.ansible/
+*.retry
+*.log
+.ansible-lint
+
+# Ansible Galaxy Installed Roles & Collections
+roles/external/
+roles/galaxy/
+collections/
+
+# Ansible Inventory Runtime Artifacts
+*.net_conf
+*.fact
+
+# ==========================================
+# CachyOs
+# ==========================================
+# package builds
+build/**/*
+
+# ==========================================
+# Markdown
+# ==========================================
+# HTML/PDF generation artifacts
+*.html
+*.pdf
+
+# Tooling caches (e.g., markdownlint)
+.markdownlint-cli2-cache
+build/
+certs/
+credentials/
