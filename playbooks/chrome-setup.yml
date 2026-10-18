@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Install and Configure Google Chrome via Flatpak (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Install and Configure Google Chrome via Flatpak
+  hosts: systems
   become: true
 
   vars:
@@ -14,7 +13,20 @@
 
   tasks:
     # -------------------------------------------------------------------------
-    # 1. Ensure Ansible Remote Tmp Directories Exist
+    # 1. Check Binary Availability
+    # -------------------------------------------------------------------------
+    - name: Check if flatpak binary exists on system
+      ansible.builtin.stat:
+        path: /usr/bin/flatpak
+      register: flatpak_binary_check
+
+    - name: Warn if Flatpak is not installed
+      ansible.builtin.debug:
+        msg: "WARNING: Flatpak executable was not found. Skipping Google Chrome installation. Ensure flatpak-setup.yml runs beforehand."
+      when: not flatpak_binary_check.stat.exists
+
+    # -------------------------------------------------------------------------
+    # 2. Ensure Ansible Remote Tmp Directories Exist
     # -------------------------------------------------------------------------
     - name: Ensure Ansible remote tmp directory exists for target users
       ansible.builtin.file:
@@ -24,33 +36,37 @@
         group: "{{ item.group }}"
         mode: '0700'
       loop: "{{ target_users }}"
+      when: flatpak_binary_check.stat.exists
 
     # -------------------------------------------------------------------------
-    # 2. Application Installation
+    # 3. Application Installation
     # -------------------------------------------------------------------------
     - name: Install Google Chrome from Flathub
       community.general.flatpak:
         name: com.google.Chrome
         state: present
         method: system
+      when: flatpak_binary_check.stat.exists
 
     # -------------------------------------------------------------------------
-    # 3. CLI Shortcut Creation
+    # 4. CLI Shortcut Creation
     # -------------------------------------------------------------------------
     - name: Create global symlink for 'google-chrome' CLI command
       ansible.builtin.file:
         src: /var/lib/flatpak/exports/bin/com.google.Chrome
         dest: /usr/local/bin/google-chrome
         state: link
+      when: flatpak_binary_check.stat.exists
 
     # -------------------------------------------------------------------------
-    # 4. Refresh Desktop & Launcher Databases
+    # 5. Refresh Desktop & Launcher Databases
     # -------------------------------------------------------------------------
     - name: Update system desktop database for menu integration
       ansible.builtin.command:
         cmd: update-desktop-database /var/lib/flatpak/exports/share/applications
       changed_when: false
       failed_when: false
+      when: flatpak_binary_check.stat.exists
 
     - name: Refresh KDE launcher cache for active user sessions
       ansible.builtin.command:
@@ -59,3 +75,4 @@
       loop: "{{ target_users }}"
       changed_when: false
       failed_when: false
+      when: flatpak_binary_check.stat.exists

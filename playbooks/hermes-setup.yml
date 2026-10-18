@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Deploy Hermes Agent Stack (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Deploy Hermes Agent Stack
+  hosts: systems
   become: true
 
   vars:

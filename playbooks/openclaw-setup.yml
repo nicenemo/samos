@@ -1,6 +1,6 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Deploy OpenClaw Stack (Framework 13 AI 300)
+- name: Deploy OpenClaw Stack
   hosts: localhost
   connection: local
   become: true

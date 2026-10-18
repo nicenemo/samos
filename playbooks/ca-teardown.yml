@@ -1,53 +1,70 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Teardown Local SSL Certs, Trust Store & /etc/hosts (Framework 13 AI 300)
+- name: Purge CA Certificate from Cluster Nodes System Trust Store
+  hosts: systems
+  become: true
+  tasks:
+    - name: Check if CA exists in node trust store
+      ansible.builtin.stat:
+        path: "/etc/ca-certificates/trust-source/anchors/ELK_Internal_CA.crt"
+      register: node_ca_stat
+    - name: Remove CA from node CachyOS trust store
+      ansible.builtin.file:
+        path: "/etc/ca-certificates/trust-source/anchors/ELK_Internal_CA.crt"
+        state: absent
+      notify: Update node trust store
+      when: node_ca_stat.stat.exists
+  handlers:
+    - name: Update node trust store
+      ansible.builtin.command:
+        cmd: "update-ca-trust"
+      changed_when: true
+- name: Clean Up Local Root CA and Controller Trust Store
   hosts: localhost
   connection: local
-  become: true
-
+  gather_facts: true
   vars:
-    domain_name: "{{ base_domain }}"
-    cert_dir: "/etc/ssl/local_certs"
-    ca_trust_dir: "/etc/ca-certificates/trust-source/anchors"
-
-    local_domains:
-      - "{{ domain_name }}"
-      - "traefik.{{ domain_name }}"
-      - "start.{{ domain_name }}"
-      - "hermes.{{ domain_name }}"
-      - "opencode.{{ domain_name }}"
-      - "openclaw.{{ domain_name }}"
-      - "ollama.{{ domain_name }}"
-
+    project_root: "{{ playbook_dir | dirname if playbook_dir.endswith('playbooks') else playbook_dir }}"
+    cert_dir: "{{ project_root }}/certs"
+    real_user: "{{ ansible_facts['env']['SUDO_USER'] | default(ansible_facts['env']['USER']) | default(ansible_facts['user_id']) }}"
   tasks:
-    # -------------------------------------------------------------------------
-    # 1. System Trust Store Cleanup
-    # -------------------------------------------------------------------------
-    - name: Remove Root CA from CachyOS trust store
+    - name: Get localized Desktop directory path via xdg-user-dir
+      ansible.builtin.command:
+        cmd: "xdg-user-dir DESKTOP"
+      become: true
+      become_user: "{{ real_user }}"
+      register: xdg_desktop_cmd
+      changed_when: false
+      failed_when: false
+    - name: Set desktop_dir fact with fallback
+      ansible.builtin.set_fact:
+        desktop_dir: "{{ xdg_desktop_cmd.stdout if (xdg_desktop_cmd.stdout | length > 0) else ('/home/' ~ real_user ~ '/Desktop') }}"
+    - name: Remove local CA key and certificate
       ansible.builtin.file:
-        path: "{{ ca_trust_dir }}/local-ca.crt"
+        path: "{{ item }}"
         state: absent
-      notify: Update CachyOS certificate store
-
-    # -------------------------------------------------------------------------
-    # 2. Local Certificate Directory Cleanup
-    # -------------------------------------------------------------------------
-    - name: Purge local certificates directory
+      loop:
+        - "{{ cert_dir }}/ca.key"
+        - "{{ cert_dir }}/ca.crt"
+    - name: Remove CA certificate from Desktop
       ansible.builtin.file:
-        path: "{{ cert_dir }}"
+        path: "{{ desktop_dir }}/ELK_Internal_CA.crt"
         state: absent
-
-    # -------------------------------------------------------------------------
-    # 3. /etc/hosts Cleanup
-    # -------------------------------------------------------------------------
-    - name: Remove local domain entries from /etc/hosts
-      ansible.builtin.lineinfile:
-        path: /etc/hosts
-        regexp: ".*\\s{{ item }}$"
+    - name: Check if CA exists in Controller trust store
+      become: true
+      ansible.builtin.stat:
+        path: "/etc/ca-certificates/trust-source/anchors/ELK_Internal_CA.crt"
+      register: controller_ca_stat
+    - name: Remove CA from Controller system trust store
+      become: true
+      ansible.builtin.file:
+        path: "/etc/ca-certificates/trust-source/anchors/ELK_Internal_CA.crt"
         state: absent
-      loop: "{{ local_domains }}"
-
+      notify: Update controller trust store
+      when: controller_ca_stat.stat.exists
   handlers:
-    - name: Update CachyOS certificate store
-      ansible.builtin.command: update-ca-trust
+    - name: Update controller trust store
+      become: true
+      ansible.builtin.command:
+        cmd: "update-ca-trust"
       changed_when: true

@@ -1,7 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
 # =============================================================================
-# Master Provisioning Playbook
+# 1. Base Setup
 # =============================================================================
 
 - name: Import Base Setup
@@ -13,11 +13,11 @@
 - name: Import ROCm & NPU Setup
   ansible.builtin.import_playbook: playbooks/rocm-npu-setup.yml
 
-- name: Import Chrome Setup
-  ansible.builtin.import_playbook: playbooks/chrome-setup.yml
-
 - name: Import Flatpak Setup
   ansible.builtin.import_playbook: playbooks/flatpak-setup.yml
+
+- name: Import Chrome Setup
+  ansible.builtin.import_playbook: playbooks/chrome-setup.yml
 
 - name: Import Docker Setup
   ansible.builtin.import_playbook: playbooks/docker-setup.yml
@@ -25,12 +25,26 @@
 - name: Import CA & Local SSL Setup
   ansible.builtin.import_playbook: playbooks/ca-setup.yml
 
+# -----------------------------------------------------------------------------
+# 2. Infrastructure Services
+# -----------------------------------------------------------------------------
 - name: Import Traefik Reverse Proxy Setup
   ansible.builtin.import_playbook: playbooks/traefik-setup.yml
 
+- name: Import Elasticsearch Setup
+  ansible.builtin.import_playbook: playbooks/elasticsearch-setup.yml
+
+- name: Import Kibana Setup
+  ansible.builtin.import_playbook: playbooks/kibana-setup.yml
+# -----------------------------------------------------------------------------
+# 3. Application & Dashboard Services
+# -----------------------------------------------------------------------------
 - name: Import Homepage Setup
   ansible.builtin.import_playbook: playbooks/homepage-setup.yml
 
+# -----------------------------------------------------------------------------
+# 4. AI Agents Setup
+# -----------------------------------------------------------------------------
 - name: Import Hermes Setup
   ansible.builtin.import_playbook: playbooks/hermes-setup.yml
 

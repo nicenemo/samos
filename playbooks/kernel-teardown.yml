@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
 - name: Teardown Optimized CachyOS Kernel & Revert to LTS (systemd-boot)
-  hosts: localhost
-  connection: local
+  hosts: systems
   become: true
 
   tasks:

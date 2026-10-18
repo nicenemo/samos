@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Install Optimized CachyOS Kernel (Framework 13 AI 300 - systemd-boot)
-  hosts: localhost
-  connection: local
+- name: Install Optimized CachyOS Kernel (systemd-boot)
+  hosts: systems
   become: true
 
   tasks:

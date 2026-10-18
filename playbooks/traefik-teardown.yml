@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Teardown Traefik Reverse Proxy Stack & Purge Config (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Teardown Traefik Reverse Proxy Stack & Purge Config
+  hosts: systems
   become: true
 
   tasks:

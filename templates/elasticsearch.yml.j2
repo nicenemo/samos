@@ -1,0 +1,37 @@
+# =============================================================================
+# Elasticsearch Server Configuration
+# =============================================================================
+cluster.name: samos-es-cluster
+node.name: {{ inventory_hostname }}
+
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+
+# Binding instellingen
+network.host: 127.0.0.1
+http.port: 9200
+
+# Dwing single-node cluster mode af
+discovery.type: single-node
+
+# =============================================================================
+# Security & TLS Configuration
+# =============================================================================
+xpack.security.enabled: true
+xpack.security.enrollment.enabled: false
+
+# HTTP Layer TLS
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.key: /etc/elasticsearch/certs/{{ inventory_hostname }}.key
+xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/{{ inventory_hostname }}.crt
+xpack.security.http.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/ca.crt" ]
+
+# Transport Layer TLS
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.key: /etc/elasticsearch/certs/{{ inventory_hostname }}.key
+xpack.security.transport.ssl.certificate: /etc/elasticsearch/certs/{{ inventory_hostname }}.crt
+xpack.security.transport.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/ca.crt" ]
+xpack.security.transport.ssl.verification_mode: certificate
+
+# Disable background Machine Learning to minimize overhead & startup failure
+xpack.ml.enabled: false

@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Teardown Google Chrome Flatpak (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Teardown Google Chrome Flatpak
+  hosts: systems
   become: true
 
   vars:
@@ -27,8 +26,13 @@
       loop: "{{ target_users }}"
 
     # -------------------------------------------------------------------------
-    # 2. Remove CLI Shortcut
+    # 2. Check executable availability & Remove CLI Shortcut
     # -------------------------------------------------------------------------
+    - name: Check if flatpak binary exists on system
+      ansible.builtin.stat:
+        path: /usr/bin/flatpak
+      register: flatpak_binary_check
+
     - name: Remove global symlink for google-chrome CLI command
       ansible.builtin.file:
         path: /usr/local/bin/google-chrome
@@ -42,6 +46,7 @@
         name: com.google.Chrome
         state: absent
         method: system
+      when: flatpak_binary_check.stat.exists
 
     # -------------------------------------------------------------------------
     # 4. Purge Home Directory Config & Cache Data
@@ -65,6 +70,7 @@
         cmd: update-desktop-database /var/lib/flatpak/exports/share/applications
       changed_when: false
       failed_when: false
+      when: flatpak_binary_check.stat.exists
 
     - name: Refresh KDE launcher cache after removal
       ansible.builtin.command:

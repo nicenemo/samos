@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Install and Configure Docker Stack & Network (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Install and Configure Docker Stack & Network
+  hosts: systems
   become: true
 
   vars:

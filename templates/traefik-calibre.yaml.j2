@@ -1,0 +1,14 @@
+http:
+  routers:
+    calibre-router:
+      rule: "Host(`{{ calibre_hostname | default('calibre.' + base_domain) }}`) || PathPrefix(`{{ calibre_subpath | default('/calibre') }}`)"
+      service: calibre-service
+      entryPoints:
+        - web
+        - websecure
+      tls: {}
+  services:
+    calibre-service:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:{{ calibre_caddy_port | default(8080) }}"

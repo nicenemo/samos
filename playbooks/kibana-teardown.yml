@@ -1,0 +1,11 @@
+#!/usr/bin/env ansible-playbook
+---
+# =============================================================================
+# Kibana Teardown & Uninstall Sequence
+# =============================================================================
+
+- name: Import Kibana Uninstall Playbook
+  ansible.builtin.import_playbook: kibana-uninstall.yml
+
+- name: Import Kibana Certificates Teardown Playbook
+  ansible.builtin.import_playbook: kibana-certs-teardown.yml

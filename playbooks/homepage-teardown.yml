@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Teardown Homepage Stack & Purge Config (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Teardown Homepage Stack & Purge Config
+  hosts: systems
   become: true
 
   tasks:

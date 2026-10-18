@@ -1,0 +1,43 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Caddy File Server & Traefik Integration
+  hosts: systems
+  become: true
+
+  vars:
+    domain: "{{ calibre_hostname | default('calibre.' + base_domain) }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Traefik Dynamic Config & /etc/hosts Cleanup
+    # -------------------------------------------------------------------------
+    - name: Remove Traefik Caddy dynamic configuration file
+      ansible.builtin.file:
+        path: /opt/compose/traefik/dynamic/calibre.yaml
+        state: absent
+
+    - name: Remove Calibre domain entry from /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: ".*{{ domain }}"
+        state: absent
+
+    # -------------------------------------------------------------------------
+    # 2. Service Management, Package Removal & Config Purge
+    # -------------------------------------------------------------------------
+    - name: Stop Caddy service
+      ansible.builtin.service:
+        name: caddy
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Remove Caddy package
+      community.general.pacman:
+        name: caddy
+        state: absent
+
+    - name: Remove Caddy configuration directory and files
+      ansible.builtin.file:
+        path: /etc/caddy
+        state: absent

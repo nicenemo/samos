@@ -1,6 +1,7 @@
+---
 services:
   traefik:
-    image: docker.io/library/traefik:v3.4.0
+    image: traefik:v3.1
     container_name: traefik
     restart: unless-stopped
     security_opt:
@@ -8,23 +9,17 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "9200:9200"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /run/docker.sock:/run/docker.sock:ro
       - /opt/compose/traefik/config/traefik.yaml:/etc/traefik/traefik.yaml:ro
-      - /opt/compose/traefik/dynamic/:/etc/traefik/dynamic/:ro
-      - /opt/compose/traefik/log/:/var/log/traefik/:rw
-      - /etc/ssl/local_certs/:/etc/ssl/local_certs/:ro
+      - /opt/compose/traefik/dynamic:/etc/traefik/dynamic:ro
+      - /etc/ssl/local_certs:/etc/ssl/local_certs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - internal-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`{{ traefik_hostname }}`)"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.traefik-dashboard.tls=true"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
 
 networks:
   internal-net:

@@ -1,0 +1,29 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Install Elasticsearch Package on Systems
+  hosts: systems
+  become: true
+  vars:
+    pkg_file_name: "elasticsearch-{{ elk_version | default('9.5.5') }}-1-x86_64.pkg.tar.zst"
+    remote_pkg_path: "/tmp/{{ pkg_file_name }}"
+
+  tasks:
+    - name: Check if Elasticsearch is already installed
+      ansible.builtin.command:
+        cmd: "pacman -Q elasticsearch"
+      register: pacman_check
+      failed_when: false
+      changed_when: false
+
+    - name: Remove conflicting pre-existing configuration files prior to package install
+      ansible.builtin.file:
+        path: /etc/elasticsearch
+        state: absent
+      when: pacman_check.rc != 0
+
+    - name: Install Elasticsearch package via pacman
+      community.general.pacman:
+        name: "{{ remote_pkg_path }}"
+        state: present
+        extra_args: "--overwrite '*'"
+      when: pacman_check.rc != 0

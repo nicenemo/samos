@@ -11,11 +11,35 @@ all:
       - btop
       - wget
       - networkmanager
+    ca_valid_days: 3650
+    leaf_valid_days: 200
+    cert_organization: "Vogon Deep-Space Avian & DTN Transit Board (RFC 1149 / RFC 9171)"
+    cert_organizational_unit: "Office for Directing DTN Bundle Custody Transfers of WireGuard-over-BLE HID Service 0x1812 Page 0x20 (HUD) over hid-ebpf to the Outer Rim"
+    cert_root_ca_cn: "B.I.R.D. (BIRD Interstellar Recursive Defenestration) Root CA"
+    elk_version: 9.5.5
+
+    cluster_roles:
+      - elasticsearch_node
+      - kibana_node
+    custom_sans:
+      - es.lt.hanskruse.eu
+      - kb.lt.hanskruse.eu
+    # Memory Sizing Defaults
+    es_heap_max_gb: 8
+    es_heap_min_gb: 8
+    es_heap_size_gb: "{{ [ [ ((ansible_facts['memtotal_mb'] | default(ram_gb * 1024 if ram_gb is defined else 4096)) / 2 / 1024) | round(0, 'floor') | int, es_heap_max_gb ] | min, es_heap_min_gb ] | max }}"
+    elasticsearch_ip: 127.0.0.1
+    kibana_memory_mb: 2048
+    calibre_library_dir: "/home/kruse/Calibre Library"
+    calibre_caddy_port: 8080
+    calibre_subpath: "/calibre"
+    calibre_hostname: "calibre.{{ base_domain }}"
 
   children:
     systems:
       hosts:
-        localhost:
+        samos:
           ansible_connection: local
+          ansible_host: 127.0.0.1
           target_user: kruse
           secondary_user: giesen

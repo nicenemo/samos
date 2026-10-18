@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Deploy Homepage Stack (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Deploy Homepage Stack
+  hosts: systems
   become: true
 
   vars:

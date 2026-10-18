@@ -1,0 +1,17 @@
+#!/usr/bin/env ansible-playbook
+---
+# =============================================================================
+# Elasticsearch Teardown & Uninstall Sequence (Systems Target)
+# =============================================================================
+
+- name: Import Uninstall Elasticsearch Playbook
+  ansible.builtin.import_playbook: elasticsearch-uninstall.yml
+
+- name: Import Remove Package File Playbook
+  ansible.builtin.import_playbook: elasticsearch-remove-package.yml
+
+- name: Import Clean Local Build Artifacts Playbook
+  ansible.builtin.import_playbook: elasticsearch-clean-local.yml
+
+- name: Import Elasticsearch Certificates Teardown Playbook
+  ansible.builtin.import_playbook: elasticsearch-certs-teardown.yml

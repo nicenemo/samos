@@ -1,6 +1,6 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Deploy OpenCode Stack (Framework 13 AI 300)
+- name: Deploy OpenCode Stack
   hosts: localhost
   connection: local
   become: true

@@ -1,6 +1,6 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Setup AMD ROCm & Ryzen AI NPU Driver Configuration (Framework 13 AI 300)
+- name: Setup AMD ROCm & Ryzen AI NPU Driver Configuration
   hosts: localhost
   connection: local
   become: true

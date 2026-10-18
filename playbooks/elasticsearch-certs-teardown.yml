@@ -1,0 +1,33 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Purge Certificates from Elasticsearch Nodes
+  hosts: systems
+  become: true
+
+  tasks:
+    - name: Remove Elasticsearch certificate directory
+      ansible.builtin.file:
+        path: /etc/elasticsearch/certs
+        state: absent
+
+- name: Remove Local Elasticsearch Credentials and Certificates on Controller
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    project_root: "{{ playbook_dir if not playbook_dir.endswith('playbooks') else playbook_dir ~ '/..' }}"
+    cert_dir: "{{ project_root }}/certs"
+    cred_dir: "{{ project_root }}/credentials"
+
+  tasks:
+    - name: Remove local leaf keys and certificates for nodes
+      ansible.builtin.file:
+        path: "{{ cert_dir }}/{{ item[0] }}.{{ item[1] }}"
+        state: absent
+      loop: "{{ (groups['systems'] | default(['localhost'])) | product(['key', 'crt']) | list }}"
+
+    - name: Remove local elastic password file
+      ansible.builtin.file:
+        path: "{{ cred_dir }}/elastic_password.txt"
+        state: absent

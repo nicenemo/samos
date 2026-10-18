@@ -1,0 +1,24 @@
+http:
+  routers:
+    elasticsearch:
+      entryPoints:
+        - elasticsearch
+      rule: "Host(`es.{{ base_domain }}`)"
+      service: elasticsearch
+      tls: {}
+
+  services:
+    elasticsearch:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9200"
+
+tls:
+  certificates:
+    - certFile: /etc/ssl/local_certs/wildcard.crt
+      keyFile: /etc/ssl/local_certs/wildcard.key
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/ssl/local_certs/wildcard.crt
+        keyFile: /etc/ssl/local_certs/wildcard.key

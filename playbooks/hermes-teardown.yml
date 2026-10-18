@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Teardown Hermes Agent Stack & Purge Data (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Teardown Hermes Agent Stack & Purge Data
+  hosts: systems
   become: true
 
   tasks:

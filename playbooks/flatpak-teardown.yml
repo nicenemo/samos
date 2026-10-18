@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Teardown Flatpak Stack (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Teardown Flatpak Stack
+  hosts: systems
   become: true
 
   tasks:

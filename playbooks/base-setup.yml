@@ -1,8 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Apply Base System Optimizations and Users (Framework 13 AI 300)
-  hosts: localhost
-  connection: local
+- name: Apply Base System Optimizations and Users
+  hosts: systems
   become: true
 
   tasks:

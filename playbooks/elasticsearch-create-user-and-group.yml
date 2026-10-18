@@ -1,0 +1,21 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Create Elasticsearch User and Group
+  hosts: systems
+  become: true
+
+  tasks:
+    - name: Ensure elasticsearch group exists
+      ansible.builtin.group:
+        name: elasticsearch
+        state: present
+        system: true
+
+    - name: Ensure elasticsearch system user exists
+      ansible.builtin.user:
+        name: elasticsearch
+        group: elasticsearch
+        home: /usr/share/elasticsearch
+        shell: /usr/bin/nologin
+        system: true
+        state: present

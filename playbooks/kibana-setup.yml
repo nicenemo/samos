@@ -1,0 +1,20 @@
+#!/usr/bin/env ansible-playbook
+---
+# =============================================================================
+# Bare-Metal Kibana Setup Chain
+# =============================================================================
+
+- name: Import Download Kibana Archive Playbook
+  ansible.builtin.import_playbook: kibana-download.yml
+
+- name: Import Build Kibana Package Playbook
+  ansible.builtin.import_playbook: kibana-package.yml
+
+- name: Import Distribute and Install Kibana Playbook
+  ansible.builtin.import_playbook: kibana-distribute-and-install.yml
+
+- name: Import Setup Kibana SSL Certificates Playbook
+  ansible.builtin.import_playbook: kibana-certs-setup.yml
+
+- name: Import Configure Kibana Playbook
+  ansible.builtin.import_playbook: kibana-configure.yml

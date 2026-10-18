@@ -1,0 +1,26 @@
+#!/usr/bin/env ansible-playbook
+---
+# =============================================================================
+# Bare-Metal Elasticsearch Setup Chain
+# =============================================================================
+
+- name: Import Download Elasticsearch Playbook
+  ansible.builtin.import_playbook: elasticsearch-download.yml
+
+- name: Import Create User and Group Playbook
+  ansible.builtin.import_playbook: elasticsearch-create-user-and-group.yml
+
+- name: Import Package Elasticsearch Playbook
+  ansible.builtin.import_playbook: elasticsearch-package.yml
+
+- name: Import Distribute Elasticsearch Playbook
+  ansible.builtin.import_playbook: elasticsearch-distribute.yml
+
+- name: Import Install Elasticsearch Playbook
+  ansible.builtin.import_playbook: elasticsearch-install.yml
+
+- name: Import Setup Elasticsearch Certs Playbook
+  ansible.builtin.import_playbook: elasticsearch-certs-setup.yml
+
+- name: Import Configure Elasticsearch Playbook
+  ansible.builtin.import_playbook: elasticsearch-configure.yml

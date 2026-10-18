@@ -1,0 +1,50 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Setup Caddy File Server behind Traefik Proxy for Calibre Library
+  hosts: systems
+  become: true
+
+  vars:
+    domain: "{{ calibre_hostname | default('calibre.' + base_domain) }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Package Installation & Base Directories
+    # -------------------------------------------------------------------------
+    - name: Ensure Caddy package is installed
+      community.general.pacman:
+        name: caddy
+        state: present
+
+    - name: Ensure Caddy configuration directory exists
+      ansible.builtin.file:
+        path: /etc/caddy
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Ensure Traefik dynamic configuration directory exists
+      ansible.builtin.file:
+        path: /opt/compose/traefik/dynamic
+        state: directory
+        owner: root
+        group: docker
+        mode: '0775'
+
+    # -------------------------------------------------------------------------
+    # 2. Template Deployment
+    # -------------------------------------------------------------------------
+    - name: Deploy Caddyfile template
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/Caddyfile.j2"
+        dest: /etc/caddy/Caddyfile
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload Caddy Service
+
+    - name: Deploy Traefik dynamic configuration template
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/traefik-calibre.yaml.j2"
+        dest: /

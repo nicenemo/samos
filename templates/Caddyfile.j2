@@ -1,0 +1,8 @@
+{
+    auto_https off
+}
+
+http://127.0.0.1:{{ calibre_caddy_port | default(8080) }} {
+    root * "{{ calibre_library_dir | default('/var/lib/calibre') }}"
+    file_server browse
+}

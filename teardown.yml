@@ -1,7 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
 # =============================================================================
-# Master Teardown Playbook
+# 1. AI Agents Teardown
 # =============================================================================
 
 - name: Import Openclaw Teardown
@@ -13,23 +13,37 @@
 - name: Import Hermes Teardown
   ansible.builtin.import_playbook: playbooks/hermes-teardown.yml
 
+# -----------------------------------------------------------------------------
+# 2. Application & Dashboard Services Teardown
+# -----------------------------------------------------------------------------
 - name: Import Homepage Teardown
   ansible.builtin.import_playbook: playbooks/homepage-teardown.yml
+
+# -----------------------------------------------------------------------------
+# 3. Infrastructure Services Teardown
+# -----------------------------------------------------------------------------
+- name: Import Kibana Teardown
+  ansible.builtin.import_playbook: playbooks/kibana-teardown.yml
+- name: Import Elasticsearch Teardown
+  ansible.builtin.import_playbook: playbooks/elasticsearch-teardown.yml
 
 - name: Import Traefik Reverse Proxy Teardown
   ansible.builtin.import_playbook: playbooks/traefik-teardown.yml
 
+# -----------------------------------------------------------------------------
+# 4. Base Teardown
+# -----------------------------------------------------------------------------
 - name: Import CA & Local SSL Teardown
   ansible.builtin.import_playbook: playbooks/ca-teardown.yml
 
 - name: Import Docker Teardown
   ansible.builtin.import_playbook: playbooks/docker-teardown.yml
 
-- name: Import Flatpak Teardown
-  ansible.builtin.import_playbook: playbooks/flatpak-teardown.yml
-
 - name: Import Chrome Teardown
   ansible.builtin.import_playbook: playbooks/chrome-teardown.yml
+
+- name: Import Flatpak Teardown
+  ansible.builtin.import_playbook: playbooks/flatpak-teardown.yml
 
 - name: Import ROCm & NPU Teardown
   ansible.builtin.import_playbook: playbooks/rocm-npu-teardown.yml

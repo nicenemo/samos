@@ -1,6 +1,6 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Teardown AMD ROCm & NPU Configuration (Framework 13 AI 300)
+- name: Teardown AMD ROCm & NPU Configuration
   hosts: localhost
   connection: local
   become: true
@@ -29,17 +29,31 @@
         - Update systemd-boot entries
 
     # -------------------------------------------------------------------------
-    # 2. Package Purge
+    # 2. Package Purge (Cascade removal)
     # -------------------------------------------------------------------------
-    - name: Remove ROCm packages
-      community.general.pacman:
-        name:
+    - name: Define ROCm packages list
+      ansible.builtin.set_fact:
+        rocm_packages:
           - rocm-hip-runtime
           - rocm-opencl-runtime
           - rocm-smi-lib
           - amd-xdna-driver-dkms
-        state: absent
-      ignore_errors: true
+
+    - name: Query installed ROCm packages
+      ansible.builtin.command:
+        cmd: "pacman -Qq {{ rocm_packages | join(' ') }}"
+      register: installed_rocm_check
+      changed_when: false
+      failed_when: false
+
+    - name: Remove ROCm packages and dependent packages via cascade removal
+      ansible.builtin.command:
+        cmd: "pacman -Rcn --noconfirm {{ installed_rocm_check.stdout_lines | join(' ') }}"
+      register: pacman_remove_rocm
+      changed_when: "'removing' in pacman_remove_rocm.stdout"
+      when:
+        - installed_rocm_check.stdout_lines is defined
+        - installed_rocm_check.stdout_lines | length > 0
 
   handlers:
     - name: Rebuild initramfs

@@ -1,0 +1,45 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Uninstall Elasticsearch from Systems
+  hosts: systems
+  become: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Service Management & Package Removal
+    # -------------------------------------------------------------------------
+    - name: Ensure Elasticsearch service is stopped and disabled
+      ansible.builtin.service:
+        name: elasticsearch
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Uninstall Elasticsearch package via pacman
+      community.general.pacman:
+        name: elasticsearch
+        state: absent
+
+    # -------------------------------------------------------------------------
+    # 2. Directory & Account Cleanup
+    # -------------------------------------------------------------------------
+    - name: Remove Elasticsearch configuration, log, data, and installation directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/elasticsearch
+        - /var/lib/elasticsearch
+        - /var/log/elasticsearch
+        - /usr/share/elasticsearch
+
+    - name: Remove elasticsearch user
+      ansible.builtin.user:
+        name: elasticsearch
+        state: absent
+        remove: true
+
+    - name: Remove elasticsearch group
+      ansible.builtin.group:
+        name: elasticsearch
+        state: absent
