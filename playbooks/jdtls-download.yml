@@ -1,0 +1,39 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Download jdtls
+  hosts: systems
+  gather_facts: true
+
+  vars:
+    project_root: "{{ playbook_dir if not playbook_dir.endswith('playbooks') else playbook_dir ~ '/..' }}"
+    # Fetches jdtls_version from inventory.yml (defaults to 1.45.0 if undefined)
+    target_version: "{{ hostvars[groups['systems'][0]]['jdtls_version'] if (groups['systems'] is defined and hostvars[groups['systems'][0]]['jdtls_version'] is defined) else '1.45.0' }}"
+    build_user: "{{ ansible_facts['env']['SUDO_USER'] | default(ansible_facts['env']['USER'] | default(lookup('ansible.builtin.env', 'USER'))) }}"
+
+  tasks:
+    - name: Set resolved version fact
+      ansible.builtin.set_fact:
+        resolved_jdtls_version: "{{ target_version }}"
+
+    - name: Display active jdtls version
+      ansible.builtin.debug:
+        msg: "jdtls target version set to: {{ resolved_jdtls_version }}"
+
+    # Define build path variables
+    - name: Set path facts for local build
+      ansible.builtin.set_fact:
+        build_dir: "{{ project_root }}/build/jdtls"
+        pkg_file_name: "jdtls-{{ resolved_jdtls_version }}-1-any.pkg.tar.zst"
+
+    - name: Ensure target build directory exists
+      ansible.builtin.file:
+        path: "{{ build_dir }}"
+        state: directory
+        owner: "{{ build_user }}"
+        mode: '0755'
+
+    - name: Download jdtls tarball locally
+      ansible.builtin.get_url:
+        url: "https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+        dest: "{{ build_dir }}/jdtls-{{ resolved_jdtls_version }}.tar.gz"
+        mode: '0644'

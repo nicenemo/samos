@@ -45,11 +45,11 @@
 # -----------------------------------------------------------------------------
 # 4. AI Agents Setup
 # -----------------------------------------------------------------------------
-- name: Import Hermes Setup
-  ansible.builtin.import_playbook: playbooks/hermes-setup.yml
-
-- name: Import Opencode Setup
-  ansible.builtin.import_playbook: playbooks/opencode-setup.yml
-
-- name: Import Openclaw Setup
-  ansible.builtin.import_playbook: playbooks/openclaw-setup.yml
+#- name: Import Hermes Setup
+#  ansible.builtin.import_playbook: playbooks/hermes-setup.yml
+#
+#- name: Import Opencode Setup
+#  ansible.builtin.import_playbook: playbooks/opencode-setup.yml
+#
+#- name: Import Openclaw Setup
+#  ansible.builtin.import_playbook: playbooks/openclaw-setup.yml

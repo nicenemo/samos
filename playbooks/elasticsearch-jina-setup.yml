@@ -1,0 +1,137 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Register All Compatible Lemonade Embedding, Reranker, and MoE/OCR Models in Elasticsearch
+  hosts: all
+  gather_facts: false
+
+  vars:
+    es_url: "https://es.{{ base_domain }}:9200"
+    es_user: "elastic"
+    pass_file_path: "{{ inventory_dir }}/credentials/elastic_password.txt"
+
+  tasks:
+    - name: Check if Elasticsearch password file exists
+      ansible.builtin.stat:
+        path: "{{ pass_file_path }}"
+      register: pass_file_stat
+      delegate_to: localhost
+
+    - name: Fail if Elasticsearch password file is missing
+      ansible.builtin.fail:
+        msg: >-
+          CRITICAL ERROR: Elasticsearch password file not found at '{{ pass_file_path }}'.
+          Ensure the prerequisite playbook has generated this file before running this step.
+      when: not pass_file_stat.stat.exists
+
+    - name: Read Elasticsearch password from file
+      ansible.builtin.set_fact:
+        es_pass: "{{ lookup('ansible.builtin.file', pass_file_path) | trim }}"
+
+    - name: Verify password is non-empty
+      ansible.builtin.fail:
+        msg: "CRITICAL ERROR: Password file '{{ pass_file_path }}' exists but is empty."
+      when: es_pass | length == 0
+
+    - name: Fetch all registered inference endpoints from Elasticsearch
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_inference"
+        method: GET
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+        timeout: 60
+      register: es_inference_endpoints
+
+    - name: Extract existing inference endpoint IDs
+      ansible.builtin.set_fact:
+        existing_inference_ids: "{{ es_inference_endpoints.json.endpoints | map(attribute='inference_id') | list }}"
+
+    - name: Get available models from Lemonade server
+      ansible.builtin.uri:
+        url: "http://localhost:{{ lemonade_port | default(13305) }}/v1/models"
+        method: GET
+        return_content: true
+        timeout: 60
+      register: lemonade_models_response
+
+    - name: Register text embedding models in Elasticsearch (including Omni)
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_inference/text_embedding/{{ (item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) }}?timeout=300s"
+        method: PUT
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        timeout: 300
+        body_format: json
+        body:
+          service: "openai"
+          service_settings:
+            url: "http://localhost:{{ lemonade_port | default(13305) }}/v1/embeddings"
+            model_id: "{{ item.id }}"
+            api_key: "lemonade"
+        status_code: [200, 201]
+      loop: "{{ lemonade_models_response.json.data }}"
+      when:
+        - "'embeddings' in (item.labels | default([]))"
+        - "'v4' not in item.id"  # Skip v4 models (pooling_type 'none' incompatibility)
+        - "(item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) not in existing_inference_ids"
+      loop_control:
+        label: "{{ item.id }}"
+
+    - name: Register reranker models in Elasticsearch
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_inference/rerank/{{ (item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) }}?timeout=300s"
+        method: PUT
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        timeout: 300
+        body_format: json
+        body:
+          service: "custom"
+          service_settings:
+            url: "http://localhost:{{ lemonade_port | default(13305) }}/v1/rerank"
+            headers:
+              Content-Type: "application/json"
+            request: '{"model": "{{ item.id }}", "query": ${query}, "documents": ${input}}'
+            response:
+              json_parser:
+                relevance_score: "$.results[*].relevance_score"
+                reranked_index: "$.results[*].index"
+        status_code: [200, 201]
+      loop: "{{ lemonade_models_response.json.data }}"
+      when:
+        - "'reranking' in (item.labels | default([]))"
+        - "(item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) not in existing_inference_ids"
+      loop_control:
+        label: "{{ item.id }}"
+
+    - name: Register MoE and Text-LLM models in Elasticsearch (Excluding Vision)
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_inference/chat_completion/{{ (item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) }}?timeout=300s"
+        method: PUT
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        timeout: 300
+        body_format: json
+        body:
+          service: "openai"
+          service_settings:
+            url: "http://localhost:{{ lemonade_port | default(13305) }}/v1/chat/completions"
+            model_id: "{{ item.id }}"
+            api_key: "lemonade"
+        status_code: [200, 201]
+      loop: "{{ lemonade_models_response.json.data }}"
+      when:
+        - "'embeddings' not in (item.labels | default([]))"
+        - "'reranking' not in (item.labels | default([]))"
+        - "'vision' not in (item.labels | default([]))"  # Exclude vision/OCR models that crash llama-server on cold start
+        - "(item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) not in existing_inference_ids"
+      loop_control:
+        label: "{{ item.id }}"

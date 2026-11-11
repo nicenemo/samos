@@ -1,0 +1,53 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Install and Configure Lemonade Server System Daemon
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Ensure Lemonade Server is installed via pacman
+      become: true
+      ansible.builtin.package:
+        name: lemonade-server
+        state: present
+
+    - name: Create system configuration directory
+      become: true
+      ansible.builtin.file:
+        path: /etc/lemonade
+        state: directory
+        mode: '0755'
+
+    - name: Create user configuration directory
+      ansible.builtin.file:
+        path: "{{ ansible_facts['env']['HOME'] }}/.config/lemonade"
+        state: directory
+        mode: '0755'
+
+    - name: Deploy Lemonade Server configuration to system path
+      become: true
+      ansible.builtin.template:
+        src: "{{ inventory_dir }}/templates/lemonade.conf.j2"
+        dest: /etc/lemonade/config.json
+        mode: '0644'
+      notify: Restart Lemonade System Daemon
+
+    - name: Deploy Lemonade Server configuration to user path
+      ansible.builtin.template:
+        src: "{{ inventory_dir }}/templates/lemonade.conf.j2"
+        dest: "{{ ansible_facts['env']['HOME'] }}/.config/lemonade/config.json"
+        mode: '0644'
+
+    - name: Enable and start system lemond service
+      become: true
+      ansible.builtin.systemd_service:
+        name: lemond
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Restart Lemonade System Daemon
+      become: true
+      ansible.builtin.systemd_service:
+        name: lemond
+        state: restarted

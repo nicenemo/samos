@@ -1,0 +1,23 @@
+# Maintainer: Hans kruse <kruse@hanskruse.eu>
+pkgname=jdtls
+pkgver={{ jdtls_version }}
+pkgrel=1
+pkgdesc="Eclipse JDT Language Server"
+arch=('any')
+url="https://github.com/eclipse/eclipse.jdt.ls"
+license=('EPL-2.0')
+depends=('java-runtime>=17')
+provides=('jdtls')
+conflicts=('jdtls')
+source=("jdt-language-server-latest.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+    # Installeer de jdtls bestanden in /usr/share/java/jdtls
+    install -d "${pkgdir}/usr/share/java/jdtls"
+    cp -r "${srcdir}"/* "${pkgdir}/usr/share/java/jdtls/"
+
+    # Maak de symlink aan in /usr/bin voor systeembrede uitvoerbaarheid
+    install -d "${pkgdir}/usr/bin"
+    ln -s /usr/share/java/jdtls/bin/jdtls "${pkgdir}/usr/bin/jdtls"
+}

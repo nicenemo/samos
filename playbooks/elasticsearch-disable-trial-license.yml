@@ -1,0 +1,53 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Revert Elasticsearch to Basic License
+  hosts: all
+  gather_facts: false
+
+  vars:
+    es_url: "https://es.{{ base_domain }}:9200"
+    pass_file_path: "{{ inventory_dir }}/credentials/elastic_password.txt"
+
+  tasks:
+    - name: Check if Elasticsearch password file exists
+      ansible.builtin.stat:
+        path: "{{ pass_file_path }}"
+      register: pass_file_stat
+      delegate_to: localhost
+
+    - name: Read Elasticsearch password from file if present
+      ansible.builtin.set_fact:
+        resolved_es_pass: "{{ lookup('ansible.builtin.file', pass_file_path) | trim }}"
+      when: pass_file_stat.stat.exists
+
+    - name: Fallback to es_password variable if file does not exist
+      ansible.builtin.set_fact:
+        resolved_es_pass: "{{ es_password }}"
+      when:
+        - not pass_file_stat.stat.exists
+        - es_password is defined
+
+    - name: Fail if no password could be resolved
+      ansible.builtin.fail:
+        msg: >-
+          CRITICAL ERROR: Elasticsearch password could not be resolved.
+          Neither the file '{{ pass_file_path }}' exists nor is the 'es_password' variable set.
+      when: resolved_es_pass is not defined or resolved_es_pass | length == 0
+
+    - name: Start Basic license
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_license/start_basic?acknowledge=true"
+        method: POST
+        user: "elastic"
+        password: "{{ resolved_es_pass }}"
+        force_basic_auth: true
+        status_code: [200, 403]
+        validate_certs: false
+      register: basic_result
+      failed_when:
+        - basic_result.status == 403
+        - "'Current license is basic' not in basic_result.json.error_message | default('')"
+
+    - name: Display license status response
+      ansible.builtin.debug:
+        msg: "{{ basic_result.json }}"

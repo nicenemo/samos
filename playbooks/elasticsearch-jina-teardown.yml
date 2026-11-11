@@ -1,0 +1,81 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Elasticsearch Integration
+  hosts: all
+  gather_facts: false
+
+  vars:
+    es_url: "https://es.{{ base_domain }}:9200"
+    es_user: "elastic"
+    pass_file_path: "{{ inventory_dir }}/credentials/elastic_password.txt"
+    ingest_pipelines:
+      - "jina-embeddings-pipeline"
+    indices_to_delete:
+      - "jina-v5-semantic-index"
+
+  tasks:
+    - name: Check if Elasticsearch password file exists
+      ansible.builtin.stat:
+        path: "{{ pass_file_path }}"
+      register: pass_file_stat
+      delegate_to: localhost
+
+    - name: Fail if Elasticsearch password file is missing
+      ansible.builtin.fail:
+        msg: "CRITICAL ERROR: Password file not found at '{{ pass_file_path }}'."
+      when: not pass_file_stat.stat.exists
+
+    - name: Read Elasticsearch password from file
+      ansible.builtin.set_fact:
+        es_pass: "{{ lookup('ansible.builtin.file', pass_file_path) | trim }}"
+
+    - name: Delete target indices from Elasticsearch
+      ansible.builtin.uri:
+        url: "{{ es_url }}/{{ item }}"
+        method: DELETE
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200, 404]
+      loop: "{{ indices_to_delete }}"
+
+    - name: Delete ingest pipelines from Elasticsearch
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_ingest/pipeline/{{ item }}"
+        method: DELETE
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200, 404]
+      loop: "{{ ingest_pipelines }}"
+
+    - name: Fetch all registered inference endpoints from Elasticsearch
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_inference"
+        method: GET
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: es_inference_endpoints
+
+    - name: Extract user inference endpoints
+      ansible.builtin.set_fact:
+        user_endpoints: "{{ es_inference_endpoints.json.endpoints | default([]) }}"
+
+    - name: Delete user-created inference endpoints from Elasticsearch
+      ansible.builtin.uri:
+        url: "{{ es_url }}/_inference/{{ item.task_type }}/{{ item.inference_id }}?force=true"
+        method: DELETE
+        user: "{{ es_user }}"
+        password: "{{ es_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200, 404]
+      loop: "{{ user_endpoints }}"
+      when: not item.inference_id.startswith('.')
+      loop_control:
+        label: "{{ item.task_type }}/{{ item.inference_id }}"

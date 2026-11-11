@@ -1,0 +1,23 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Install jdtls Package on Systems
+  hosts: systems
+  become: true
+  vars:
+    pkg_file_name: "jdtls-{{ jdtls_version | default('1.45.0') }}-1-any.pkg.tar.zst"
+    remote_pkg_path: "/tmp/{{ pkg_file_name }}"
+
+  tasks:
+    - name: Check if jdtls is already installed
+      ansible.builtin.command:
+        cmd: "pacman -Q jdtls"
+      register: pacman_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install jdtls package via pacman
+      community.general.pacman:
+        name: "{{ remote_pkg_path }}"
+        state: present
+        extra_args: "--overwrite '*'"
+      when: pacman_check.rc != 0

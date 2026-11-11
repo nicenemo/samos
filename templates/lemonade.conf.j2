@@ -1,0 +1,8 @@
+{
+  "host": "{{ lemonade_host | default('0.0.0.0') }}",
+  "port": {{ lemonade_port | default(13305) }},
+  "extra_models_dir": "{{ lemonade_extra_models_dir | default('/home/' + ansible_facts['user_id'] + '/.cache/lemonade/models') }}",
+  "embedding": {
+    "backend": "llama-cpp"
+  }
+}

@@ -1,0 +1,41 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Teardown Lemonade Server System Daemon and Models
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Stop and disable Lemonade system daemon (lemond)
+      become: true
+      ansible.builtin.systemd_service:
+        name: lemond
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Remove system-level configuration directory (/etc/lemonade)
+      become: true
+      ansible.builtin.file:
+        path: /etc/lemonade
+        state: absent
+
+    - name: Remove user-level configuration directory (~/.config/lemonade)
+      ansible.builtin.file:
+        path: "{{ ansible_facts['env']['HOME'] }}/.config/lemonade"
+        state: absent
+
+    - name: Remove orphan systemd user service unit if present
+      ansible.builtin.file:
+        path: "{{ ansible_facts['env']['HOME'] }}/.config/systemd/user/lemonade-server.service"
+        state: absent
+
+    - name: Remove Lemonade downloaded models cache
+      ansible.builtin.file:
+        path: "{{ lemonade_extra_models_dir | default(ansible_facts['env']['HOME'] + '/.cache/lemonade/models') }}"
+        state: absent
+
+    - name: Remove Lemonade Server package from system (pacman)
+      become: true
+      ansible.builtin.package:
+        name: lemonade-server
+        state: absent

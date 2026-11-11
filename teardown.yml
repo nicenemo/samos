@@ -4,14 +4,14 @@
 # 1. AI Agents Teardown
 # =============================================================================
 
-- name: Import Openclaw Teardown
-  ansible.builtin.import_playbook: playbooks/openclaw-teardown.yml
-
-- name: Import Opencode Teardown
-  ansible.builtin.import_playbook: playbooks/opencode-teardown.yml
-
-- name: Import Hermes Teardown
-  ansible.builtin.import_playbook: playbooks/hermes-teardown.yml
+#- name: Import Openclaw Teardown
+#  ansible.builtin.import_playbook: playbooks/openclaw-teardown.yml
+#
+#- name: Import Opencode Teardown
+#  ansible.builtin.import_playbook: playbooks/opencode-teardown.yml
+#
+#- name: Import Hermes Teardown
+#  ansible.builtin.import_playbook: playbooks/hermes-teardown.yml
 
 # -----------------------------------------------------------------------------
 # 2. Application & Dashboard Services Teardown

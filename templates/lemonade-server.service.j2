@@ -1,0 +1,13 @@
+[Unit]
+Description=Lemonade Local AI Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/lemonade-server serve --host {{ lemonade_host | default('0.0.0.0') }} --port {{ lemonade_port | default(13305) }}
+Restart=always
+RestartSec=5s
+Environment="LEMONADE_CONFIG_DIR=%h/.config/lemonade"
+
+[Install]
+WantedBy=default.target

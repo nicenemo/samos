@@ -1,0 +1,25 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Distribute jdtls Package to Systems
+  hosts: systems
+  become: true
+  vars:
+    project_root: "{{ playbook_dir if not playbook_dir.endswith('playbooks') else playbook_dir ~ '/..' }}"
+    build_dir: "{{ project_root }}/build/jdtls"
+    pkg_file_name: "jdtls-{{ jdtls_version | default('1.45.0') }}-1-any.pkg.tar.zst"
+    remote_pkg_path: "/tmp/{{ pkg_file_name }}"
+
+  tasks:
+    - name: Check if jdtls is already installed
+      ansible.builtin.command:
+        cmd: "pacman -Q jdtls"
+      register: pacman_check
+      failed_when: false
+      changed_when: false
+
+    - name: Copy built jdtls package to target system
+      ansible.builtin.copy:
+        src: "{{ build_dir }}/{{ pkg_file_name }}"
+        dest: "{{ remote_pkg_path }}"
+        mode: '0644'
+      when: pacman_check.rc != 0
