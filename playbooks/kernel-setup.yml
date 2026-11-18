@@ -50,6 +50,23 @@
         - Rebuild initramfs
         - Update systemd-boot entries
 
+    - name: Read /etc/kernel/cmdline for the duplicate check
+      ansible.builtin.slurp:
+        src: /etc/kernel/cmdline
+      register: kernel_cmdline_raw
+
+    # Repairs command lines that earlier, non-idempotent runs filled with repeated parameters.
+    - name: Remove duplicate kernel parameters
+      ansible.builtin.copy:
+        dest: /etc/kernel/cmdline
+        content: "{{ (kernel_cmdline_raw.content | b64decode).split() | unique | join(' ') }}\n"
+        owner: root
+        group: root
+        mode: '0644'
+      notify:
+        - Rebuild initramfs
+        - Update systemd-boot entries
+
     # -------------------------------------------------------------------------
     # 3. DKMS Rebuild & Initramfs
     # -------------------------------------------------------------------------
