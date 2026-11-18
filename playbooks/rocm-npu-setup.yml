@@ -55,11 +55,12 @@
         modification_time: preserve
         access_time: preserve
 
+    # Appended only when the parameter is missing, so repeated runs leave the command line unchanged.
     - name: Configure amdgpu.gttsize=81922 in /etc/kernel/cmdline for systemd-boot
       ansible.builtin.lineinfile:
         path: /etc/kernel/cmdline
         backrefs: true
-        regexp: '^(.*)$'
+        regexp: '^((?!.*(^|\s)amdgpu\.gttsize=81922(\s|$)).*)$'
         line: '\1 amdgpu.gttsize=81922'
       notify:
         - Rebuild initramfs
