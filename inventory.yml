@@ -16,6 +16,7 @@ all:
       - ansible-lint
       - yamllint
       - markdownlint-cli2
+      - actionlint
       - hugo
       - jekyll
     firestorm_users:
