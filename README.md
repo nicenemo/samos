@@ -6,9 +6,10 @@ AI (ROCm, the Ryzen AI NPU and a Lemonade server), next to a small development s
 proxy.
 
 The repository started as a copy of [multiberry](https://github.com/nicenemo/multiberry), the gaming and Ollama machine
-with an NVIDIA GTX 1080. The NVIDIA driver stack and Ollama do not apply here (AMD graphics, Lemonade). The gaming
-kernel options (`pci=rebar`, `split_lock_detect=off`) are deliberate. No playbook in this repository sets up Steam or
-Microsoft Flight Simulator yet.
+with an NVIDIA GTX 1080. The NVIDIA driver stack does not apply here (AMD graphics). The gaming kernel options
+(`pci=rebar`, `split_lock_detect=off`) are deliberate, and the Ollama and Open WebUI templates (Ollama is used now and
+then next to Lemonade) and the Firestorm build templates (Firestorm is used by a second user) are kept even though no
+setup playbook uses them at the moment. No playbook in this repository sets up Steam or Microsoft Flight Simulator yet.
 
 ---
 
@@ -64,7 +65,7 @@ Settings (domain, package lists, Lemonade port and models, Elasticsearch and Kib
 ├── ansible-user-setup.yml      # management user bootstrap
 ├── ansible-user-teardown.yml
 ├── playbooks/                  # one setup and one teardown playbook per component
-├── templates/                  # Jinja templates (compose files, Traefik, Elasticsearch, Kibana, Lemonade, ...)
+├── templates/                  # Jinja templates (compose files, Traefik, Elasticsearch, Kibana, Lemonade, Ollama, ...)
 └── index.html                  # project page
 ```
 

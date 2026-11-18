@@ -1,0 +1,24 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Pull and Register Local AI Models in Lemonade
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Ensure Lemonade service is running and responsive
+      ansible.builtin.uri:
+        url: "http://localhost:{{ lemonade_port | default(13305) }}/api/v1/health"
+        method: GET
+        status_code: 200
+      register: health_check
+      until: health_check.status == 200
+      retries: 5
+      delay: 3
+
+    - name: Download specified models using lemonade CLI
+      ansible.builtin.command:
+        cmd: "lemonade pull hf:{{ item.repo }}"
+      loop: "{{ lemonade_models }}"
+      when: lemonade_models is defined
+      register: pull_results
+      changed_when: "'Downloading' in pull_results.stdout or 'Pulled' in pull_results.stdout"
