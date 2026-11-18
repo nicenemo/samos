@@ -13,11 +13,17 @@
 - name: Import ROCm & NPU Setup
   ansible.builtin.import_playbook: playbooks/rocm-npu-setup.yml
 
+- name: Import Lemonade Server Setup
+  ansible.builtin.import_playbook: playbooks/lemonade-setup.yml
+
 - name: Import Flatpak Setup
   ansible.builtin.import_playbook: playbooks/flatpak-setup.yml
 
 - name: Import Chrome Setup
   ansible.builtin.import_playbook: playbooks/chrome-setup.yml
+
+- name: Import Firestorm Viewer Setup
+  ansible.builtin.import_playbook: playbooks/firestorm-setup.yml
 
 - name: Import Docker Setup
   ansible.builtin.import_playbook: playbooks/docker-setup.yml
@@ -30,6 +36,9 @@
 # -----------------------------------------------------------------------------
 - name: Import Traefik Reverse Proxy Setup
   ansible.builtin.import_playbook: playbooks/traefik-setup.yml
+
+- name: Import Caddy (Calibre library) Setup
+  ansible.builtin.import_playbook: playbooks/caddy-setup.yml
 
 - name: Import Elasticsearch Setup
   ansible.builtin.import_playbook: playbooks/elasticsearch-setup.yml
@@ -53,3 +62,9 @@
 #
 #- name: Import Openclaw Setup
 #  ansible.builtin.import_playbook: playbooks/openclaw-setup.yml
+
+# -----------------------------------------------------------------------------
+# Run on demand (not part of setup.yml)
+# -----------------------------------------------------------------------------
+#  playbooks/lemonade-pull-models.yml       downloads the models listed in inventory.yml
+#  playbooks/elasticsearch-jina-setup.yml   Jina inference endpoints in Elasticsearch

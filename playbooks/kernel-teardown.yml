@@ -25,11 +25,19 @@
     # -------------------------------------------------------------------------
     # 2. Kernel Command Line Revert
     # -------------------------------------------------------------------------
+    - name: Read the kernel tuning parameters
+      ansible.builtin.set_fact:
+        tuning_tokens: >-
+          {{ lookup('ansible.builtin.file', playbook_dir ~ '/../files/samos-tuning.conf').splitlines()
+          | map('trim') | reject('match', '(#|$)') | list }}
+
+    # Exact token match, so a parameter that merely contains one of ours is left alone.
     - name: Revert performance kernel parameters from /etc/kernel/cmdline
       ansible.builtin.replace:
         path: /etc/kernel/cmdline
-        regexp: '\s*(amd_pstate=active|mitigations=off|pci=rebar|split_lock_detect=off)'
+        regexp: '(^|\s+){{ item | regex_escape }}(?=\s|$)'
         replace: ''
+      loop: "{{ tuning_tokens }}"
       notify:
         - Rebuild initramfs
         - Update systemd-boot entries

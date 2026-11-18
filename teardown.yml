@@ -27,6 +27,9 @@
 - name: Import Elasticsearch Teardown
   ansible.builtin.import_playbook: playbooks/elasticsearch-teardown.yml
 
+- name: Import Caddy (Calibre library) Teardown
+  ansible.builtin.import_playbook: playbooks/caddy-teardown.yml
+
 - name: Import Traefik Reverse Proxy Teardown
   ansible.builtin.import_playbook: playbooks/traefik-teardown.yml
 
@@ -39,11 +42,17 @@
 - name: Import Docker Teardown
   ansible.builtin.import_playbook: playbooks/docker-teardown.yml
 
+- name: Import Firestorm Viewer Teardown
+  ansible.builtin.import_playbook: playbooks/firestorm-teardown.yml
+
 - name: Import Chrome Teardown
   ansible.builtin.import_playbook: playbooks/chrome-teardown.yml
 
 - name: Import Flatpak Teardown
   ansible.builtin.import_playbook: playbooks/flatpak-teardown.yml
+
+- name: Import Lemonade Server Teardown
+  ansible.builtin.import_playbook: playbooks/lemonade-teardown.yml
 
 - name: Import ROCm & NPU Teardown
   ansible.builtin.import_playbook: playbooks/rocm-npu-teardown.yml

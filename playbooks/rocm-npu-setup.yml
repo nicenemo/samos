@@ -43,31 +43,7 @@
       failed_when: false
 
     # -------------------------------------------------------------------------
-    # 2. Kernel Parameter (80GB GTT / VRAM Pool for 96GB RAM)
-    # -------------------------------------------------------------------------
-    - name: Ensure /etc/kernel/cmdline exists
-      ansible.builtin.file:
-        path: /etc/kernel/cmdline
-        state: touch
-        owner: root
-        group: root
-        mode: '0644'
-        modification_time: preserve
-        access_time: preserve
-
-    - name: Read the ROCm kernel parameters
-      ansible.builtin.set_fact:
-        rocm_cmdline_tokens: >-
-          {{ lookup('ansible.builtin.file', playbook_dir ~ '/../files/samos-rocm-cmdline.conf').splitlines()
-          | map('trim') | reject('match', '(#|$)') | list }}
-
-    - name: Configure amdgpu.gttsize in /etc/kernel/cmdline for systemd-boot
-      ansible.builtin.include_tasks: tasks/kernel-cmdline.yml
-      vars:
-        cmdline_tokens: "{{ rocm_cmdline_tokens }}"
-
-    # -------------------------------------------------------------------------
-    # 3. Environment & Modprobe Configuration
+    # 2. Environment & Modprobe Configuration
     # -------------------------------------------------------------------------
     - name: Deploy ROCm and NPU system environment parameters
       ansible.builtin.copy:
@@ -89,13 +65,3 @@
         owner: root
         group: root
         mode: '0644'
-
-  handlers:
-    - name: Rebuild initramfs
-      ansible.builtin.command: mkinitcpio -P
-      changed_when: true
-
-    - name: Update systemd-boot entries
-      ansible.builtin.command: bootctl update
-      changed_when: true
-      failed_when: false
