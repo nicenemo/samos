@@ -6,6 +6,7 @@
   become: true
 
   vars:
+    project_root: "{{ playbook_dir | dirname }}"
     domain_name: "{{ base_domain | default('lt.hanskruse.eu') }}"
     opencode_hostname: "opencode.{{ domain_name }}"
 
@@ -29,7 +30,7 @@
     # -------------------------------------------------------------------------
     - name: Deploy OpenCode docker-compose file
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/docker-compose-opencode.j2"
+        src: "{{ project_root }}/templates/docker-compose-opencode.j2"
         dest: /opt/compose/opencode/docker-compose.yml
         owner: root
         group: docker

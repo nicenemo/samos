@@ -6,6 +6,7 @@
   become: true
 
   vars:
+    project_root: "{{ playbook_dir | dirname }}"
     domain_name: "{{ base_domain | default('lt.hanskruse.eu') }}"
     openclaw_hostname: "openclaw.{{ domain_name }}"
 
@@ -29,7 +30,7 @@
     # -------------------------------------------------------------------------
     - name: Deploy OpenClaw docker-compose file
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/docker-compose-openclaw.j2"
+        src: "{{ project_root }}/templates/docker-compose-openclaw.j2"
         dest: /opt/compose/openclaw/docker-compose.yml
         owner: root
         group: docker

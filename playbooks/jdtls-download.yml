@@ -5,10 +5,9 @@
   gather_facts: true
 
   vars:
-    project_root: "{{ playbook_dir if not playbook_dir.endswith('playbooks') else playbook_dir ~ '/..' }}"
-    # Fetches jdtls_version from inventory.yml (defaults to 1.45.0 if undefined)
-    target_version: "{{ hostvars[groups['systems'][0]]['jdtls_version'] if (groups['systems'] is defined and hostvars[groups['systems'][0]]['jdtls_version'] is defined) else '1.45.0' }}"
-    build_user: "{{ ansible_facts['env']['SUDO_USER'] | default(ansible_facts['env']['USER'] | default(lookup('ansible.builtin.env', 'USER'))) }}"
+    project_root: "{{ playbook_dir | dirname }}"
+    target_version: "{{ jdtls_version }}"
+    build_user: "{{ target_user }}"
 
   tasks:
     - name: Set resolved version fact
@@ -32,8 +31,20 @@
         owner: "{{ build_user }}"
         mode: '0755'
 
-    - name: Download jdtls tarball locally
+    - name: Look up the tarball name of the milestone
+      ansible.builtin.uri:
+        url: "https://download.eclipse.org/jdtls/milestones/{{ resolved_jdtls_version }}/latest.txt"
+        return_content: true
+      register: jdtls_latest
+      check_mode: false
+      changed_when: false
+
+    - name: Download the jdtls milestone tarball locally (checksum verified)
       ansible.builtin.get_url:
-        url: "https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+        url: "{{ jdtls_url }}"
         dest: "{{ build_dir }}/jdtls-{{ resolved_jdtls_version }}.tar.gz"
+        checksum: "sha256:{{ jdtls_url }}.sha256"
         mode: '0644'
+      vars:
+        jdtls_url: >-
+          https://download.eclipse.org/jdtls/milestones/{{ resolved_jdtls_version }}/{{ jdtls_latest.content | trim }}

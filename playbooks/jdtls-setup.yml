@@ -1,0 +1,18 @@
+#!/usr/bin/env ansible-playbook
+---
+# jdtls (Eclipse JDT language server): build a pacman package locally, distribute it, install it and
+# remove the temporary package file again. The individual steps can also be run on their own.
+- name: Download jdtls
+  ansible.builtin.import_playbook: jdtls-download.yml
+
+- name: Package jdtls
+  ansible.builtin.import_playbook: jdtls-package.yml
+
+- name: Distribute the jdtls package
+  ansible.builtin.import_playbook: jdtls-distribute.yml
+
+- name: Install jdtls
+  ansible.builtin.import_playbook: jdtls-install.yml
+
+- name: Remove the temporary jdtls package file
+  ansible.builtin.import_playbook: jdtls-remove-package.yml

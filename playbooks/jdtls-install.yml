@@ -10,7 +10,7 @@
   tasks:
     - name: Check if jdtls is already installed
       ansible.builtin.command:
-        cmd: "pacman -Q jdtls"
+        cmd: 'pacman -Q jdtls'
       register: pacman_check
       failed_when: false
       changed_when: false
@@ -20,4 +20,4 @@
         name: "{{ remote_pkg_path }}"
         state: present
         extra_args: "--overwrite '*'"
-      when: pacman_check.rc != 0
+      when: pacman_check.rc != 0 or (jdtls_version ~ '-1') not in pacman_check.stdout

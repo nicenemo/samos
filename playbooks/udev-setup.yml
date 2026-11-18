@@ -28,7 +28,7 @@
         dest: "/etc/udev/rules.d/{{ item.dest }}"
         owner: root
         group: root
-        mode: "0644"
+        mode: '0644'
       loop: "{{ udev_rules }}"
       loop_control:
         label: "{{ item.dest }}"

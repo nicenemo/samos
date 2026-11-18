@@ -1,16 +1,16 @@
-#!/usr/bin/env ansible-playbook
+# !/usr/bin/env ansible-playbook
 ---
 # =============================================================================
 # 1. AI Agents Teardown
 # =============================================================================
 
-#- name: Import Openclaw Teardown
+# - name: Import Openclaw Teardown
 #  ansible.builtin.import_playbook: playbooks/openclaw-teardown.yml
 #
-#- name: Import Opencode Teardown
+# - name: Import Opencode Teardown
 #  ansible.builtin.import_playbook: playbooks/opencode-teardown.yml
 #
-#- name: Import Hermes Teardown
+# - name: Import Hermes Teardown
 #  ansible.builtin.import_playbook: playbooks/hermes-teardown.yml
 
 # -----------------------------------------------------------------------------
@@ -38,6 +38,9 @@
 # -----------------------------------------------------------------------------
 - name: Import CA & Local SSL Teardown
   ansible.builtin.import_playbook: playbooks/ca-teardown.yml
+
+- name: Import jdtls Teardown
+  ansible.builtin.import_playbook: playbooks/jdtls-teardown.yml
 
 - name: Import udev Rules Teardown
   ansible.builtin.import_playbook: playbooks/udev-teardown.yml

@@ -13,8 +13,8 @@
   ansible.builtin.lineinfile:
     path: "{{ kernel_cmdline_path | default('/etc/kernel/cmdline') }}"
     backrefs: true
-    regexp: '^((?!.*(^|\s){{ item | regex_escape }}(\s|$)).*)$'
-    line: '\1 {{ item }}'
+    regexp: "^((?!.*(^|\\s){{ item | regex_escape }}(\\s|$)).*)$"
+    line: "\\1 {{ item }}"
   loop: "{{ cmdline_tokens }}"
   notify:
     - Rebuild initramfs

@@ -52,8 +52,8 @@
       ansible.builtin.find:
         paths: /usr/lib/modules
         file_type: directory
-        patterns: "*cachyos*"
-        excludes: "*lts*"
+        patterns: '*cachyos*'
+        excludes: '*lts*'
       register: kernel_module_dirs
 
     - name: Extract target kernel release string

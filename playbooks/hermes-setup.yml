@@ -5,9 +5,10 @@
   become: true
 
   vars:
+    project_root: "{{ playbook_dir | dirname }}"
     domain_name: "{{ base_domain | default('lt.hanskruse.eu') }}"
     hermes_hostname: "hermes.{{ domain_name }}"
-    hermes_telegram_bot_token: ""  # Vul in of override via extra-vars
+    hermes_telegram_bot_token: "" # Vul in of override via extra-vars
 
   tasks:
     # -------------------------------------------------------------------------
@@ -29,7 +30,7 @@
     # -------------------------------------------------------------------------
     - name: Deploy Hermes Agent docker-compose file
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/docker-compose-hermes.j2"
+        src: "{{ project_root }}/templates/docker-compose-hermes.j2"
         dest: /opt/compose/hermes/docker-compose.yml
         owner: root
         group: docker

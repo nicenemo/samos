@@ -1,0 +1,11 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Remove jdtls
+  hosts: systems
+  become: true
+
+  tasks:
+    - name: Remove the jdtls package
+      community.general.pacman:
+        name: jdtls
+        state: absent

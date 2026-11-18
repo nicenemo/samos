@@ -11,7 +11,7 @@
         name: lemond
         state: stopped
         enabled: false
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove system-level configuration directory (/etc/lemonade)
       become: true

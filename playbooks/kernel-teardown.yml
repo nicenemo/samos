@@ -35,8 +35,8 @@
     - name: Revert performance kernel parameters from /etc/kernel/cmdline
       ansible.builtin.replace:
         path: /etc/kernel/cmdline
-        regexp: '(^|\s+){{ item | regex_escape }}(?=\s|$)'
-        replace: ''
+        regexp: "(^|\\s+){{ item | regex_escape }}(?=\\s|$)"
+        replace: ""
       loop: "{{ tuning_tokens }}"
       notify:
         - Rebuild initramfs

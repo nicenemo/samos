@@ -6,9 +6,10 @@
   become: true
 
   vars:
+    project_root: "{{ playbook_dir | dirname }}"
     domain_name: "{{ base_domain | default('lt.hanskruse.eu') }}"
     traefik_hostname: "traefik.{{ domain_name }}"
-    local_cert_dir: "/etc/ssl/local_certs"
+    local_cert_dir: '/etc/ssl/local_certs'
 
   tasks:
     # -------------------------------------------------------------------------
@@ -40,7 +41,7 @@
     # -------------------------------------------------------------------------
     - name: Deploy Traefik main configuration (traefik.yaml)
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/traefik.yaml.j2"
+        src: "{{ project_root }}/templates/traefik.yaml.j2"
         dest: /opt/compose/traefik/config/traefik.yaml
         owner: root
         group: docker
@@ -48,7 +49,7 @@
 
     - name: Deploy Traefik dynamic TLS configuration
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/traefik-dynamic-tls.yaml.j2"
+        src: "{{ project_root }}/templates/traefik-dynamic-tls.yaml.j2"
         dest: /opt/compose/traefik/dynamic/tls.yaml
         owner: root
         group: docker
@@ -56,7 +57,7 @@
 
     - name: Deploy Traefik docker-compose file
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/docker-compose-traefik.j2"
+        src: "{{ project_root }}/templates/docker-compose-traefik.j2"
         dest: /opt/compose/traefik/docker-compose.yml
         owner: root
         group: docker

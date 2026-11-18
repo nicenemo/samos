@@ -38,7 +38,7 @@
       ansible.builtin.uri:
         url: "{{ es_url }}/_license/start_trial?acknowledge=true"
         method: POST
-        user: "elastic"
+        user: 'elastic'
         password: "{{ resolved_es_pass }}"
         force_basic_auth: true
         status_code: [200, 400]

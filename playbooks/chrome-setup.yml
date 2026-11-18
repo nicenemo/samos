@@ -22,7 +22,9 @@
 
     - name: Warn if Flatpak is not installed
       ansible.builtin.debug:
-        msg: "WARNING: Flatpak executable was not found. Skipping Google Chrome installation. Ensure flatpak-setup.yml runs beforehand."
+        msg: >-
+          WARNING: Flatpak executable was not found. Skipping Google Chrome installation. Ensure flatpak-setup.yml
+          runs beforehand.
       when: not flatpak_binary_check.stat.exists
 
     # -------------------------------------------------------------------------
@@ -71,6 +73,7 @@
     - name: Refresh KDE launcher cache for active user sessions
       ansible.builtin.command:
         cmd: kbuildsycoca6 --noincremental
+      become: true
       become_user: "{{ item.name }}"
       loop: "{{ target_users }}"
       changed_when: false

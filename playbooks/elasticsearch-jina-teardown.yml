@@ -6,12 +6,12 @@
 
   vars:
     es_url: "https://es.{{ base_domain }}:9200"
-    es_user: "elastic"
+    es_user: 'elastic'
     pass_file_path: "{{ inventory_dir }}/credentials/elastic_password.txt"
     ingest_pipelines:
-      - "jina-embeddings-pipeline"
+      - 'jina-embeddings-pipeline'
     indices_to_delete:
-      - "jina-v5-semantic-index"
+      - 'jina-v5-semantic-index'
 
   tasks:
     - name: Check if Elasticsearch password file exists

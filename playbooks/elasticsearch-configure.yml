@@ -6,7 +6,9 @@
   vars:
     project_root: "{{ playbook_dir if not playbook_dir.endswith('playbooks') else playbook_dir ~ '/..' }}"
     # Generates a random password locally on control machine; reuses existing value if present
-    es_elastic_password: "{{ lookup('ansible.builtin.password', project_root ~ '/credentials/elastic_password.txt length=24 chars=ascii_letters,digits') }}"
+    es_elastic_password: >-
+      {{ lookup('ansible.builtin.password', project_root ~ '/credentials/elastic_password.txt length=24
+      chars=ascii_letters,digits') }}
 
   tasks:
     - name: End play for nodes without the elasticsearch_node role
@@ -99,7 +101,9 @@
 
     - name: Check if generated elastic password is already active
       ansible.builtin.uri:
-        url: "https://{{ (hostvars[inventory_hostname]['elasticsearch_ip'] | default(ansible_host)).split('/')[0] }}:9200/_cluster/health"
+        url: >-
+          https://{{ (hostvars[inventory_hostname]['elasticsearch_ip'] | default(ansible_host)).split('/')[0]
+          }}:9200/_cluster/health
         user: elastic
         password: "{{ es_elastic_password }}"
         force_basic_auth: true
@@ -112,12 +116,17 @@
 
     - name: Set elastic user password on cluster
       ansible.builtin.shell: >
+        set -o pipefail;
         printf "%s\n%s\n" "{{ es_elastic_password }}" "{{ es_elastic_password }}" |
         /usr/share/elasticsearch/bin/elasticsearch-reset-password
         --username elastic
-        --url "https://{{ (hostvars[inventory_hostname]['elasticsearch_ip'] | default(ansible_host)).split('/')[0] }}:9200"
+        --url "https://{{ (hostvars[inventory_hostname]['elasticsearch_ip']
+        | default(ansible_host)).split('/')[0] }}:9200"
         --interactive
         --batch
+      args:
+        executable: /bin/bash
+      changed_when: true
       when: es_auth_check.status is not defined or es_auth_check.status != 200
       run_once: true
       no_log: true
@@ -127,7 +136,9 @@
     # -------------------------------------------------------------------------
     - name: Verify Elasticsearch cluster health endpoint on each node
       ansible.builtin.uri:
-        url: "https://{{ (hostvars[inventory_hostname]['elasticsearch_ip'] | default(ansible_host)).split('/')[0] }}:9200/_cluster/health"
+        url: >-
+          https://{{ (hostvars[inventory_hostname]['elasticsearch_ip'] | default(ansible_host)).split('/')[0]
+          }}:9200/_cluster/health
         method: GET
         user: elastic
         password: "{{ es_elastic_password }}"
@@ -143,7 +154,7 @@
     - name: Display active elastic password and cluster health status
       ansible.builtin.debug:
         msg:
-          - "=========================================================="
+          - '=========================================================='
           - "Elasticsearch Node {{ inventory_hostname }} is HEALTHY!"
           - "Cluster Status: {{ es_health_check.json.status }}"
           - "Number of Nodes: {{ es_health_check.json.number_of_nodes }}"
@@ -151,12 +162,14 @@
           - "Elasticsearch 'elastic' user password:"
           - "  {{ es_elastic_password }}"
           - ""
-          - "Stored locally on control machine at:"
+          - 'Stored locally on control machine at:'
           - "  {{ project_root }}/credentials/elastic_password.txt"
           - ""
-          - "Test command (copy-paste directly in ANY shell):"
-          - "  curl -k -u elastic:{{ es_elastic_password }} https://{{ (hostvars[inventory_hostname]['elasticsearch_ip'] | default(ansible_host)).split('/')[0] }}:9200/_cluster/health?pretty"
-          - "=========================================================="
+          - 'Test command (copy-paste directly in ANY shell):'
+          - "  curl -k -u elastic:{{ es_elastic_password }} https://{{ es_host }}:9200/_cluster/health?pretty"
+          - '=========================================================='
+      vars:
+        es_host: "{{ (hostvars[inventory_hostname]['elasticsearch_ip'] | default(ansible_host)).split('/')[0] }}"
 
   handlers:
     - name: Restart Elasticsearch

@@ -35,7 +35,7 @@ setup playbook uses them at the moment. No playbook in this repository sets up S
 | TLS and proxy | `ca-setup.yml` (local root CA), `traefik-setup.yml`, `caddy-setup.yml` (Calibre library) |
 | Search | `elasticsearch-setup.yml`, `kibana-setup.yml` and their certificate, package and distribution playbooks |
 | Dashboard | `homepage-setup.yml` |
-| Java | `jdtls-*` playbooks (Eclipse JDT language server package) |
+| Java | `jdtls-setup.yml`: jdtls (Eclipse JDT language server) as a locally built pacman package |
 | Agents (disabled in `setup.yml`) | `hermes-setup.yml`, `opencode-setup.yml`, `openclaw-setup.yml` |
 
 Every `*-setup.yml` has a `*-teardown.yml`; `setup.yml` and `teardown.yml` import them in order and reverse order.
@@ -72,14 +72,15 @@ Settings (domain, package lists, Lemonade port and models, Elasticsearch and Kib
 
 ## Secret scanning
 
-Run `./githooks-setup.sh` once per checkout. The `pre-commit` hook in `.githooks/` runs `gitleaks` on the staged changes
-and the `pre-push` hook runs `trufflehog` on the commits being pushed (`gitleaks` and `trufflehog` must be installed;
-the hooks refuse to run without them). Scan the whole history with `gitleaks git --redact` and
+Run `./githooks-setup.sh` once per checkout. The `pre-commit` hook in `.githooks/` runs `gitleaks` on the staged
+changes, `yamllint` and `ansible-lint`; the `pre-push` hook runs `trufflehog` on the commits being pushed. The hooks
+refuse to run when a tool is missing. Scan the whole history with `gitleaks git --redact` and
 `trufflehog git file://$PWD`. Never bypass the hooks with `--no-verify`.
 
 ## Project page and licence
 
 `index.html` is the project page, published with GitHub Pages by `.github/workflows/static.yml` (only the page files
-`index.html`, `style.css`, `menu.js`, `hero-bg.svg` and `favicon.svg` are deployed, not the playbooks). The layout (bar with
-menu, wave banner with a `hanskruse.eu` button, footer), the shared files, the workflow and the licence are the same in
-all the playbook repositories (kos, mikmakmuk, multiberry, samos). Released under the [MIT License](./LICENSE), (c) 2026 Hans Kruse.
+`index.html`, `style.css`, `menu.js`, `hero-bg.svg` and `favicon.svg` are deployed, not the playbooks). The layout
+(bar with menu, wave banner with a `hanskruse.eu` button, footer), the shared files, the workflow and the licence are
+the same in all the playbook repositories (kos, mikmakmuk, multiberry, samos). Released under the
+[MIT License](./LICENSE), (c) 2026 Hans Kruse.

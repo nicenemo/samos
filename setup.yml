@@ -1,4 +1,4 @@
-#!/usr/bin/env ansible-playbook
+# !/usr/bin/env ansible-playbook
 ---
 # =============================================================================
 # 1. Base Setup
@@ -31,6 +31,9 @@
 - name: Import udev Rules Setup
   ansible.builtin.import_playbook: playbooks/udev-setup.yml
 
+- name: Import jdtls Setup
+  ansible.builtin.import_playbook: playbooks/jdtls-setup.yml
+
 - name: Import CA & Local SSL Setup
   ansible.builtin.import_playbook: playbooks/ca-setup.yml
 
@@ -57,13 +60,13 @@
 # -----------------------------------------------------------------------------
 # 4. AI Agents Setup
 # -----------------------------------------------------------------------------
-#- name: Import Hermes Setup
+# - name: Import Hermes Setup
 #  ansible.builtin.import_playbook: playbooks/hermes-setup.yml
 #
-#- name: Import Opencode Setup
+# - name: Import Opencode Setup
 #  ansible.builtin.import_playbook: playbooks/opencode-setup.yml
 #
-#- name: Import Openclaw Setup
+# - name: Import Openclaw Setup
 #  ansible.builtin.import_playbook: playbooks/openclaw-setup.yml
 
 # -----------------------------------------------------------------------------

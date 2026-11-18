@@ -6,7 +6,7 @@
 
   vars:
     es_url: "https://es.{{ base_domain }}:9200"
-    es_user: "elastic"
+    es_user: 'elastic'
     pass_file_path: "{{ inventory_dir }}/credentials/elastic_password.txt"
 
   tasks:
@@ -58,7 +58,8 @@
 
     - name: Register text embedding models in Elasticsearch (including Omni)
       ansible.builtin.uri:
-        url: "{{ es_url }}/_inference/text_embedding/{{ (item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) }}?timeout=300s"
+        url: >-
+          {{ es_url }}/_inference/text_embedding/{{ item.id | lower | regex_replace('[^a-z0-9_\-]', '_') }}?timeout=300s
         method: PUT
         user: "{{ es_user }}"
         password: "{{ es_pass }}"
@@ -67,16 +68,16 @@
         timeout: 300
         body_format: json
         body:
-          service: "openai"
+          service: 'openai'
           service_settings:
             url: "http://localhost:{{ lemonade_port | default(13305) }}/v1/embeddings"
             model_id: "{{ item.id }}"
-            api_key: "lemonade"
+            api_key: 'lemonade'
         status_code: [200, 201]
       loop: "{{ lemonade_models_response.json.data }}"
       when:
         - "'embeddings' in (item.labels | default([]))"
-        - "'v4' not in item.id"  # Skip v4 models (pooling_type 'none' incompatibility)
+        - "'v4' not in item.id" # Skip v4 models (pooling_type 'none' incompatibility)
         - "(item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) not in existing_inference_ids"
       loop_control:
         label: "{{ item.id }}"
@@ -92,16 +93,16 @@
         timeout: 300
         body_format: json
         body:
-          service: "custom"
+          service: 'custom'
           service_settings:
             url: "http://localhost:{{ lemonade_port | default(13305) }}/v1/rerank"
             headers:
-              Content-Type: "application/json"
+              Content-Type: 'application/json'
             request: '{"model": "{{ item.id }}", "query": ${query}, "documents": ${input}}'
             response:
               json_parser:
-                relevance_score: "$.results[*].relevance_score"
-                reranked_index: "$.results[*].index"
+                relevance_score: '$.results[*].relevance_score'
+                reranked_index: '$.results[*].index'
         status_code: [200, 201]
       loop: "{{ lemonade_models_response.json.data }}"
       when:
@@ -112,7 +113,9 @@
 
     - name: Register MoE and Text-LLM models in Elasticsearch (Excluding Vision)
       ansible.builtin.uri:
-        url: "{{ es_url }}/_inference/chat_completion/{{ (item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) }}?timeout=300s"
+        url: >-
+          {{ es_url }}/_inference/chat_completion/{{
+          item.id | lower | regex_replace('[^a-z0-9_\-]', '_') }}?timeout=300s
         method: PUT
         user: "{{ es_user }}"
         password: "{{ es_pass }}"
@@ -121,17 +124,18 @@
         timeout: 300
         body_format: json
         body:
-          service: "openai"
+          service: 'openai'
           service_settings:
             url: "http://localhost:{{ lemonade_port | default(13305) }}/v1/chat/completions"
             model_id: "{{ item.id }}"
-            api_key: "lemonade"
+            api_key: 'lemonade'
         status_code: [200, 201]
       loop: "{{ lemonade_models_response.json.data }}"
       when:
         - "'embeddings' not in (item.labels | default([]))"
         - "'reranking' not in (item.labels | default([]))"
-        - "'vision' not in (item.labels | default([]))"  # Exclude vision/OCR models that crash llama-server on cold start
+        # Exclude vision/OCR models that crash llama-server on cold start
+        - "'vision' not in (item.labels | default([]))"
         - "(item.id | lower | regex_replace('[^a-z0-9_\\-]', '_')) not in existing_inference_ids"
       loop_control:
         label: "{{ item.id }}"

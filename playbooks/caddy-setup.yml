@@ -5,6 +5,7 @@
   become: true
 
   vars:
+    project_root: "{{ playbook_dir | dirname }}"
     domain: "{{ calibre_hostname | default('calibre.' + base_domain) }}"
 
   tasks:
@@ -37,7 +38,7 @@
     # -------------------------------------------------------------------------
     - name: Deploy Caddyfile template
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/Caddyfile.j2"
+        src: "{{ project_root }}/templates/Caddyfile.j2"
         dest: /etc/caddy/Caddyfile
         owner: root
         group: root
@@ -46,5 +47,30 @@
 
     - name: Deploy Traefik dynamic configuration template
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/traefik-calibre.yaml.j2"
-        dest: /
+        src: "{{ project_root }}/templates/traefik-calibre.yaml.j2"
+        dest: /opt/compose/traefik/dynamic/calibre.yaml
+        owner: root
+        group: docker
+        mode: '0640'
+
+    # -------------------------------------------------------------------------
+    # 3. Local Name Resolution & Service Management
+    # -------------------------------------------------------------------------
+    - name: Add Calibre domain entry to /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_host }} {{ domain }}"
+        regexp: ".*{{ domain | regex_escape }}"
+        state: present
+
+    - name: Enable and start the Caddy service
+      ansible.builtin.service:
+        name: caddy
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Reload Caddy Service
+      ansible.builtin.service:
+        name: caddy
+        state: reloaded
