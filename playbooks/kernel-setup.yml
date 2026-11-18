@@ -34,12 +34,23 @@
         modification_time: preserve
         access_time: preserve
 
+    # Only append when the parameters are missing, so repeated runs do not grow the command line.
     - name: Apply Framework AI 300 kernel performance parameters
       ansible.builtin.lineinfile:
         path: /etc/kernel/cmdline
         backrefs: true
-        regexp: '^(.*)$'
-        line: '\1 amd_pstate=active mitigations=off pci=rebar split_lock_detect=off'
+        regexp: '^((?!.*\bamd_pstate=active\b.*\bmitigations=off\b).*)$'
+        line: '\1 amd_pstate=active mitigations=off'
+      notify:
+        - Rebuild initramfs
+        - Update systemd-boot entries
+
+    # pci=rebar and split_lock_detect=off came from the multiberry gaming setup; they are not needed here.
+    - name: Remove leftover gaming parameters from /etc/kernel/cmdline
+      ansible.builtin.replace:
+        path: /etc/kernel/cmdline
+        regexp: '\s+(pci=rebar|split_lock_detect=off)\b'
+        replace: ''
       notify:
         - Rebuild initramfs
         - Update systemd-boot entries
