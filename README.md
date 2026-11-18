@@ -27,7 +27,7 @@ setup playbook uses them at the moment. No playbook in this repository sets up S
 | Area | Playbooks |
 | --- | --- |
 | Base | `base-setup.yml`: keyrings, upgrade, common packages, users and groups, Neovim as editor |
-| Kernel | `kernel-setup.yml`: `linux-cachyos`, `amd-ucode`, `amd_pstate=active`, `pci=rebar`, `split_lock_detect=off` |
+| Kernel | `kernel-setup.yml`: `linux-cachyos`, `amd-ucode`, boot parameters from `files/samos-tuning.conf` (`amd_pstate=active`, `pci=rebar`, ...) |
 | AI | `rocm-npu-setup.yml` (ROCm, XDNA NPU driver), `lemonade-setup.yml`, `lemonade-pull-models.yml` |
 | Desktop | `flatpak-setup.yml`, `chrome-setup.yml`, `firestorm-setup.yml` |
 | Containers | `docker-setup.yml` |

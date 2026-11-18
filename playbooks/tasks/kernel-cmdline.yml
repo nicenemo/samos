@@ -1,0 +1,38 @@
+---
+# Adds kernel parameters to /etc/kernel/cmdline (systemd-boot), idempotently. Include with:
+#   cmdline_tokens: list of parameters
+# Each parameter is appended only when it is missing, and repeated parameters left by earlier non-idempotent runs
+# are removed. Changes notify the handlers "Rebuild initramfs" and "Update systemd-boot entries" of the calling play.
+# kernel_cmdline_path can be overridden for testing.
+- name: Read /etc/kernel/cmdline
+  ansible.builtin.slurp:
+    src: "{{ kernel_cmdline_path | default('/etc/kernel/cmdline') }}"
+  register: kernel_cmdline_before
+
+- name: Append the missing parameters
+  ansible.builtin.lineinfile:
+    path: "{{ kernel_cmdline_path | default('/etc/kernel/cmdline') }}"
+    backrefs: true
+    regexp: '^((?!.*(^|\s){{ item | regex_escape }}(\s|$)).*)$'
+    line: '\1 {{ item }}'
+  loop: "{{ cmdline_tokens }}"
+  notify:
+    - Rebuild initramfs
+    - Update systemd-boot entries
+
+- name: Read /etc/kernel/cmdline for the duplicate check
+  ansible.builtin.slurp:
+    src: "{{ kernel_cmdline_path | default('/etc/kernel/cmdline') }}"
+  register: kernel_cmdline_raw
+
+# Repairs command lines that earlier, non-idempotent runs filled with repeated parameters.
+- name: Remove duplicate kernel parameters
+  ansible.builtin.copy:
+    dest: "{{ kernel_cmdline_path | default('/etc/kernel/cmdline') }}"
+    content: "{{ (kernel_cmdline_raw.content | b64decode).split() | unique | join(' ') }}\n"
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Rebuild initramfs
+    - Update systemd-boot entries

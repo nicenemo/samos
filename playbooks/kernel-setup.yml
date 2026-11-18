@@ -34,38 +34,16 @@
         modification_time: preserve
         access_time: preserve
 
-    # Each parameter is appended only when it is missing, so repeated runs leave the command line unchanged.
+    - name: Read the kernel tuning parameters
+      ansible.builtin.set_fact:
+        tuning_tokens: >-
+          {{ lookup('ansible.builtin.file', playbook_dir ~ '/../files/samos-tuning.conf').splitlines()
+          | map('trim') | reject('match', '(#|$)') | list }}
+
     - name: Apply Framework AI 300 kernel performance parameters
-      ansible.builtin.lineinfile:
-        path: /etc/kernel/cmdline
-        backrefs: true
-        regexp: '^((?!.*(^|\s){{ item | regex_escape }}(\s|$)).*)$'
-        line: '\1 {{ item }}'
-      loop:
-        - amd_pstate=active
-        - mitigations=off
-        - pci=rebar
-        - split_lock_detect=off
-      notify:
-        - Rebuild initramfs
-        - Update systemd-boot entries
-
-    - name: Read /etc/kernel/cmdline for the duplicate check
-      ansible.builtin.slurp:
-        src: /etc/kernel/cmdline
-      register: kernel_cmdline_raw
-
-    # Repairs command lines that earlier, non-idempotent runs filled with repeated parameters.
-    - name: Remove duplicate kernel parameters
-      ansible.builtin.copy:
-        dest: /etc/kernel/cmdline
-        content: "{{ (kernel_cmdline_raw.content | b64decode).split() | unique | join(' ') }}\n"
-        owner: root
-        group: root
-        mode: '0644'
-      notify:
-        - Rebuild initramfs
-        - Update systemd-boot entries
+      ansible.builtin.include_tasks: tasks/kernel-cmdline.yml
+      vars:
+        cmdline_tokens: "{{ tuning_tokens }}"
 
     # -------------------------------------------------------------------------
     # 3. DKMS Rebuild & Initramfs
@@ -89,6 +67,21 @@
       register: dkms_result
       changed_when: dkms_result.rc == 0
       when: target_kernel_release is defined
+
+    # -------------------------------------------------------------------------
+    # 4. Verification (no automatic reboot: this play runs on the machine itself)
+    # -------------------------------------------------------------------------
+    - name: Read the running kernel command line
+      ansible.builtin.slurp:
+        src: /proc/cmdline
+      register: live_cmdline_raw
+
+    - name: Report parameters that need a reboot to become active
+      ansible.builtin.debug:
+        msg: >-
+          Reboot required: not yet in /proc/cmdline:
+          {{ tuning_tokens | difference((live_cmdline_raw.content | b64decode).split()) | join(' ') }}
+      when: tuning_tokens | difference((live_cmdline_raw.content | b64decode).split()) | length > 0
 
   handlers:
     - name: Rebuild initramfs

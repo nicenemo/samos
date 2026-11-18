@@ -55,35 +55,16 @@
         modification_time: preserve
         access_time: preserve
 
-    # Each parameter is appended only when it is missing, so repeated runs leave the command line unchanged.
-    - name: Configure amdgpu.gttsize=81922 in /etc/kernel/cmdline for systemd-boot
-      ansible.builtin.lineinfile:
-        path: /etc/kernel/cmdline
-        backrefs: true
-        regexp: '^((?!.*(^|\s){{ item | regex_escape }}(\s|$)).*)$'
-        line: '\1 {{ item }}'
-      loop:
-        - amdgpu.gttsize=81922
-      notify:
-        - Rebuild initramfs
-        - Update systemd-boot entries
+    - name: Read the ROCm kernel parameters
+      ansible.builtin.set_fact:
+        rocm_cmdline_tokens: >-
+          {{ lookup('ansible.builtin.file', playbook_dir ~ '/../files/samos-rocm-cmdline.conf').splitlines()
+          | map('trim') | reject('match', '(#|$)') | list }}
 
-    - name: Read /etc/kernel/cmdline for the duplicate check
-      ansible.builtin.slurp:
-        src: /etc/kernel/cmdline
-      register: kernel_cmdline_raw
-
-    # Repairs command lines that earlier, non-idempotent runs filled with repeated parameters.
-    - name: Remove duplicate kernel parameters
-      ansible.builtin.copy:
-        dest: /etc/kernel/cmdline
-        content: "{{ (kernel_cmdline_raw.content | b64decode).split() | unique | join(' ') }}\n"
-        owner: root
-        group: root
-        mode: '0644'
-      notify:
-        - Rebuild initramfs
-        - Update systemd-boot entries
+    - name: Configure amdgpu.gttsize in /etc/kernel/cmdline for systemd-boot
+      ansible.builtin.include_tasks: tasks/kernel-cmdline.yml
+      vars:
+        cmdline_tokens: "{{ rocm_cmdline_tokens }}"
 
     # -------------------------------------------------------------------------
     # 3. Environment & Modprobe Configuration
