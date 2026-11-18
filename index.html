@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>samos</title>
-<meta name="description" content="Ansible playbooks for a Framework 13 laptop running CachyOS with local AI and development services.">
+<meta name="description" content="Ansible playbooks for a Framework 13 laptop running CachyOS for Second Life, Steam, Microsoft Flight Simulator 2024, local AI and development services.">
 <style>
   :root {
     color-scheme: light dark;
@@ -41,7 +41,7 @@
 <body>
 <header><div class="wrap">
   <h1>samos</h1>
-  <p class="tag">Ansible playbooks for a Framework 13 laptop (AMD Ryzen AI 300) running CachyOS, with local AI and a small service stack.</p>
+  <p class="tag">Ansible playbooks for a Framework 13 laptop (AMD Ryzen AI 300) running CachyOS for gaming, local AI and a small service stack.</p>
   <p class="btns">
     <a href="https://github.com/nicenemo/samos">Repository</a>
     <a class="alt" href="https://github.com/nicenemo/samos/tree/main/playbooks">Playbooks</a>
@@ -51,6 +51,7 @@
   <h2>Hardware</h2>
   <table>
     <tr><th>Machine</th><td>samos, Framework 13</td></tr>
+    <tr><th>Memory</th><td>96 GB</td></tr>
     <tr><th>CPU / NPU</th><td>AMD Ryzen AI 300 series with XDNA NPU</td></tr>
     <tr><th>Graphics</th><td>integrated Radeon, large shared memory allocation for models</td></tr>
     <tr><th>System</th><td>CachyOS, systemd-boot</td></tr>
@@ -60,9 +61,10 @@
   <ul>
     <li><b>Base:</b> keyrings, upgrade, users, Neovim as editor</li>
     <li><b>Kernel:</b> <code>linux-cachyos</code>, AMD microcode, <code>amd_pstate</code> and boot options</li>
+    <li><b>Gaming:</b> kernel options for games (<code>pci=rebar</code>, <code>split_lock_detect=off</code>); the machine also runs Steam and Microsoft Flight Simulator 2024.</li>
     <li><b>AI:</b> ROCm, the XDNA NPU driver, Lemonade server with embedding and reranker models</li>
     <li><b>Services:</b> Docker, local root CA, Traefik, Caddy, Elasticsearch and Kibana, Homepage</li>
-    <li><b>Desktop:</b> Flatpak, Google Chrome, Firestorm viewer, Java language server</li>
+    <li><b>Desktop:</b> Flatpak, Google Chrome, Firestorm viewer (Second Life), Java language server</li>
   </ul>
   <p>Every setup playbook has a teardown.</p>
 

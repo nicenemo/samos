@@ -1,18 +1,21 @@
 # samos: Framework 13 on CachyOS
 
 Ansible playbooks for **samos**, a Framework 13 laptop with an AMD Ryzen AI 300 series processor, running CachyOS with
-systemd-boot. The machine runs local AI workloads (ROCm, the Ryzen AI NPU and a Lemonade server) next to a small
-development service stack behind a Traefik reverse proxy.
+systemd-boot. The machine is used for Second Life (Firestorm), Steam games, Microsoft Flight Simulator 2024 and local
+AI (ROCm, the Ryzen AI NPU and a Lemonade server), next to a small development service stack behind a Traefik reverse
+proxy.
 
 The repository started as a copy of [multiberry](https://github.com/nicenemo/multiberry), the gaming and Ollama machine
-with an NVIDIA GTX 1080. Nothing of that machine applies here: no NVIDIA drivers, no gaming tuning, no Ollama.
+with an NVIDIA GTX 1080. The NVIDIA driver stack and Ollama do not apply here (AMD graphics, Lemonade). The gaming
+kernel options (`pci=rebar`, `split_lock_detect=off`) are deliberate. No playbook in this repository sets up Steam or
+Microsoft Flight Simulator yet.
 
 ---
 
 ## Hardware and system
 
 * **Host name:** `samos` (managed locally, `ansible_connection: local`)
-* **Machine:** Framework 13, AMD Ryzen AI 300 series with XDNA NPU
+* **Machine:** Framework 13, AMD Ryzen AI 300 series with XDNA NPU, 96 GB RAM
 * **Graphics:** integrated Radeon, with a large shared memory allocation for models (48 GB, see `inventory.yml`)
 * **OS and boot:** CachyOS, systemd-boot (kernel options in `/etc/kernel/cmdline`)
 
@@ -23,7 +26,7 @@ with an NVIDIA GTX 1080. Nothing of that machine applies here: no NVIDIA drivers
 | Area | Playbooks |
 | --- | --- |
 | Base | `base-setup.yml`: keyrings, upgrade, common packages, users and groups, Neovim as editor |
-| Kernel | `kernel-setup.yml`: `linux-cachyos`, `amd-ucode`, `amd_pstate=active` and other boot options |
+| Kernel | `kernel-setup.yml`: `linux-cachyos`, `amd-ucode`, `amd_pstate=active`, `pci=rebar`, `split_lock_detect=off` |
 | AI | `rocm-npu-setup.yml` (ROCm, XDNA NPU driver), `lemonade-setup.yml`, `lemonade-pull-models.yml` |
 | Desktop | `flatpak-setup.yml`, `chrome-setup.yml`, `firestorm-setup.yml` |
 | Containers | `docker-setup.yml` |
