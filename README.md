@@ -1,55 +1,69 @@
-# CachyOS Gaming & AI Node Automation
+# samos: Framework 13 on CachyOS
 
-An automated Infrastructure-as-Code repository built with Ansible to configure a dedicated gaming and AI machine (`multiberry`) running CachyOS. 
+Ansible playbooks for **samos**, a Framework 13 laptop with an AMD Ryzen AI 300 series processor, running CachyOS with
+systemd-boot. The machine runs local AI workloads (ROCm, the Ryzen AI NPU and a Lemonade server) next to a small
+development service stack behind a Traefik reverse proxy.
 
-This repository streamlines system optimizations, kernel tuning, legacy GPU driver installation, system-wide environment variables, and pre-allocated directory structures specifically tailored for **Microsoft Flight Simulator 2024** and local **Large Language Models (Ollama)**.
-
----
-
-## Targeted System Hardware Specs
-
-* **Host Name:** `multiberry` (`192.168.105.101`)
-* **CPU:** AMD Ryzen 7 3700X (8 Cores / 16 Threads)
-* **RAM:** 32 GB DDR4 @ 3200 MHz
-* **GPU:** NVIDIA GeForce GTX 1080 (8 GB GDDR5X, Gainward Phoenix)
-* **Bootloader:** Limine
-* **OS:** CachyOS (Arch Linux-based)
+The repository started as a copy of [multiberry](https://github.com/nicenemo/multiberry), the gaming and Ollama machine
+with an NVIDIA GTX 1080. Nothing of that machine applies here: no NVIDIA drivers, no gaming tuning, no Ollama.
 
 ---
 
-## Purpose & Optimization Strategy
+## Hardware and system
 
-### 1. Microsoft Flight Simulator 2024 (Proton / VKD3D)
-* **Legacy 580xx Driver Stack:** Locks the system to NVIDIA's legacy 580xx proprietary drivers required for Pascal architecture (GTX 1080) under CachyOS, bypassing issues with newer driver branches dropping support or defaulting to non-functional open-source modules.
-* **VKD3D Memory & DXR Overrides:** Sets `VKD3D_CONFIG=dxr0,no_upload_hacks` globally via `/etc/environment.d/` to strip DirectX Raytracing overhead and resolve memory allocation crashes in DirectX 12.
-* **Pre-allocated Cache Directories:** Automatically creates the directory tree required for MSFS 2024 cloud streaming rolling cache to prevent Linux permission stalls.
-
-### 2. Local AI & LLM Workloads (Ollama - *Planned*)
-* **Pascal Acceleration:** Prepares the system for CUDA inference offloading using `llama.cpp` / `Ollama`. Optimizes standard CUDA core matrix math for 8B models (e.g., Llama 3.1 8B, DeepSeek-R1 8B) within the 8 GB VRAM buffer, while allowing hybrid CPU/DDR4 system memory offloading for larger models.
-*(Dedicated Ollama installation and model management playbooks will be integrated in a future release.)*
-
-### 3. Kernel & System Optimizations
-* **Security Mitigations Disabled (`mitigations=off`):** Applied via `/etc/kernel/cmdline` for Limine to maximize CPU execution throughput on the Ryzen 3700X.
-* **Latency & Frame-Time Tuning:** Applies `pci=rebar`, `split_lock_detect=off`, and `processor.max_cstate=1` to prevent VKD3D micro-stutters and split-lock frame drops.
-* **Developer Environment:** Enforces Neovim (`nvim`) as the system-wide default text editor across shell profiles (`EDITOR`/`VISUAL`).
+* **Host name:** `samos` (managed locally, `ansible_connection: local`)
+* **Machine:** Framework 13, AMD Ryzen AI 300 series with XDNA NPU
+* **Graphics:** integrated Radeon, with a large shared memory allocation for models (48 GB, see `inventory.yml`)
+* **OS and boot:** CachyOS, systemd-boot (kernel options in `/etc/kernel/cmdline`)
 
 ---
 
-## Repository Structure
+## What the playbooks do
+
+| Area | Playbooks |
+| --- | --- |
+| Base | `base-setup.yml`: keyrings, upgrade, common packages, users and groups, Neovim as editor |
+| Kernel | `kernel-setup.yml`: `linux-cachyos`, `amd-ucode`, `amd_pstate=active` and other boot options |
+| AI | `rocm-npu-setup.yml` (ROCm, XDNA NPU driver), `lemonade-setup.yml`, `lemonade-pull-models.yml` |
+| Desktop | `flatpak-setup.yml`, `chrome-setup.yml`, `firestorm-setup.yml` |
+| Containers | `docker-setup.yml` |
+| TLS and proxy | `ca-setup.yml` (local root CA), `traefik-setup.yml`, `caddy-setup.yml` (Calibre library) |
+| Search | `elasticsearch-setup.yml`, `kibana-setup.yml` and their certificate, package and distribution playbooks |
+| Dashboard | `homepage-setup.yml` |
+| Java | `jdtls-*` playbooks (Eclipse JDT language server package) |
+| Agents (disabled in `setup.yml`) | `hermes-setup.yml`, `opencode-setup.yml`, `openclaw-setup.yml` |
+
+Every `*-setup.yml` has a `*-teardown.yml`; `setup.yml` and `teardown.yml` import them in order and reverse order.
+
+---
+
+## Usage
+
+```bash
+./ansible-user-setup.yml -K     # create the ansible management user (needs your sudo password)
+./setup.yml                     # run every setup playbook
+./teardown.yml                  # revert
+ansible-playbook playbooks/lemonade-setup.yml   # one part
+```
+
+Settings (domain, package lists, Lemonade port and models, Elasticsearch and Kibana version and memory) are in
+`inventory.yml`; Jinja templates for services are in `templates/`.
+
+---
+
+## Repository structure
 
 ```text
 .
-├── README.md
-├── ansible.cfg                 # Global Ansible execution parameters & SSH options
-├── inventory.yml               # Target node definition (multiberry) and package lists
-├── setup.yml                   # Master provisioning entry point
-├── teardown.yml                # Master reversion entry point
-├── ansible-user-teardown.yml   # Management user cleanup script
-├── files/
-│   └── 99-game-tuning.conf     # Global Proton, VKD3D, and default editor environment vars
-└── playbooks/
-    ├── base-setup.yml          # Core execution tasks (keyrings, kernel, drivers, packages)
-    └── base-teardown.yml       # Cleanup and reversion tasks
+├── ansible.cfg
+├── inventory.yml               # host samos, shared variables and package lists
+├── setup.yml / teardown.yml    # orchestrators (import_playbook lists)
+├── ansible-user-setup.yml      # management user bootstrap
+├── ansible-user-teardown.yml
+├── playbooks/                  # one setup and one teardown playbook per component
+├── templates/                  # Jinja templates (compose files, Traefik, Elasticsearch, Kibana, Lemonade, ...)
+└── index.html                  # project page
+```
 
 ## Project page and licence
 

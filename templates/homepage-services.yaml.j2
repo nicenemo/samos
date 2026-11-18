@@ -3,6 +3,6 @@
 # https://gethomepage.dev/configs/services/
 
 - Other:
-    - Ollama model library:
-        href: https://ollama.com/library
-        description: Ollama model library
+    - Lemonade server:
+        href: http://localhost:{{ lemonade_port | default(13305) }}
+        description: Local AI server (Lemonade)
