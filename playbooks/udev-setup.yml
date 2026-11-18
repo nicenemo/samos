@@ -1,0 +1,45 @@
+#!/usr/bin/env ansible-playbook
+---
+# udev rules for the ESP32 / M5Stack boards that are flashed and tested from samos.
+- name: Install udev Rules for ESP32 Boards
+  hosts: systems
+  become: true
+
+  vars:
+    project_root: "{{ playbook_dir | dirname }}"
+    udev_rules:
+      # Serial adapters (CP210x, CH9102, CH340) and Espressif native USB, group uucp
+      - src: 99-samos-esp32-serial.rules
+        dest: 99-samos-esp32.rules
+      # hidraw access for the Nachtgespenst macro pad (USB and Bluetooth, ID 1209:0001)
+      - src: 70-nachtgespenst-hidraw.rules
+        dest: 70-nachtgespenst-hidraw.rules
+
+  tasks:
+    - name: Add target user to uucp (serial ports)
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        groups: uucp
+        append: true
+
+    - name: Install the udev rule files
+      ansible.builtin.copy:
+        src: "{{ project_root }}/files/{{ item.src }}"
+        dest: "/etc/udev/rules.d/{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ udev_rules }}"
+      loop_control:
+        label: "{{ item.dest }}"
+      notify: Reload udev
+
+  handlers:
+    - name: Reload udev
+      ansible.builtin.command: udevadm control --reload-rules
+      changed_when: true
+      notify: Apply udev rules to present devices
+
+    - name: Apply udev rules to present devices
+      ansible.builtin.command: udevadm trigger --subsystem-match=tty --subsystem-match=hidraw --subsystem-match=usb
+      changed_when: true

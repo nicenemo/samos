@@ -28,6 +28,9 @@
 - name: Import Docker Setup
   ansible.builtin.import_playbook: playbooks/docker-setup.yml
 
+- name: Import udev Rules Setup
+  ansible.builtin.import_playbook: playbooks/udev-setup.yml
+
 - name: Import CA & Local SSL Setup
   ansible.builtin.import_playbook: playbooks/ca-setup.yml
 

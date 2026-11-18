@@ -31,6 +31,7 @@ setup playbook uses them at the moment. No playbook in this repository sets up S
 | AI | `rocm-npu-setup.yml` (ROCm, XDNA NPU driver), `lemonade-setup.yml`, `lemonade-pull-models.yml` |
 | Desktop | `flatpak-setup.yml`, `chrome-setup.yml`, `firestorm-setup.yml` |
 | Containers | `docker-setup.yml` |
+| Devices | `udev-setup.yml`: udev rules and `uucp` for ESP32 serial adapters and the Nachtgespenst hidraw device |
 | TLS and proxy | `ca-setup.yml` (local root CA), `traefik-setup.yml`, `caddy-setup.yml` (Calibre library) |
 | Search | `elasticsearch-setup.yml`, `kibana-setup.yml` and their certificate, package and distribution playbooks |
 | Dashboard | `homepage-setup.yml` |

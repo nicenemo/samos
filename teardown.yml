@@ -39,6 +39,9 @@
 - name: Import CA & Local SSL Teardown
   ansible.builtin.import_playbook: playbooks/ca-teardown.yml
 
+- name: Import udev Rules Teardown
+  ansible.builtin.import_playbook: playbooks/udev-teardown.yml
+
 - name: Import Docker Teardown
   ansible.builtin.import_playbook: playbooks/docker-teardown.yml
 

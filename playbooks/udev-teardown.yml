@@ -1,0 +1,27 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Remove udev Rules for ESP32 Boards
+  hosts: systems
+  become: true
+
+  tasks:
+    - name: Remove the udev rule files
+      ansible.builtin.file:
+        path: "/etc/udev/rules.d/{{ item }}"
+        state: absent
+      loop:
+        - 99-samos-esp32.rules
+        - 70-nachtgespenst-hidraw.rules
+      notify: Reload udev
+
+    - name: Remove target user from uucp
+      ansible.builtin.command:
+        cmd: "gpasswd -d {{ target_user }} uucp"
+      register: gpasswd_result
+      changed_when: gpasswd_result.rc == 0
+      failed_when: false
+
+  handlers:
+    - name: Reload udev
+      ansible.builtin.command: udevadm control --reload-rules
+      changed_when: true
