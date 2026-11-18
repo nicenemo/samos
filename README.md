@@ -65,6 +65,13 @@ Settings (domain, package lists, Lemonade port and models, Elasticsearch and Kib
 └── index.html                  # project page
 ```
 
+## Secret scanning
+
+Run `./githooks-setup.sh` once per checkout. The `pre-commit` hook in `.githooks/` runs `gitleaks` on the staged changes
+and the `pre-push` hook runs `trufflehog` on the commits being pushed (`gitleaks` and `trufflehog` must be installed;
+the hooks refuse to run without them). Scan the whole history with `gitleaks git --redact` and
+`trufflehog git file://$PWD`. Never bypass the hooks with `--no-verify`.
+
 ## Project page and licence
 
 `index.html` is the project page, published with GitHub Pages by `.github/workflows/static.yml` (only that file is
