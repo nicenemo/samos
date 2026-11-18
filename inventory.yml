@@ -16,6 +16,7 @@ all:
       - ansible-lint
       - yamllint
       - markdownlint-cli2
+      - hugo
     firestorm_users:
       - kruse
       - giesen
