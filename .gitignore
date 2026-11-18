@@ -76,3 +76,6 @@ build/**/*
 build/
 certs/
 credentials/
+
+# The project page is the one HTML file that is tracked
+!/index.html
