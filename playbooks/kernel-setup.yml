@@ -34,12 +34,18 @@
         modification_time: preserve
         access_time: preserve
 
+    # Each parameter is appended only when it is missing, so repeated runs leave the command line unchanged.
     - name: Apply Framework AI 300 kernel performance parameters
       ansible.builtin.lineinfile:
         path: /etc/kernel/cmdline
         backrefs: true
-        regexp: '^(.*)$'
-        line: '\1 amd_pstate=active mitigations=off pci=rebar split_lock_detect=off'
+        regexp: '^((?!.*(^|\s){{ item | regex_escape }}(\s|$)).*)$'
+        line: '\1 {{ item }}'
+      loop:
+        - amd_pstate=active
+        - mitigations=off
+        - pci=rebar
+        - split_lock_detect=off
       notify:
         - Rebuild initramfs
         - Update systemd-boot entries
