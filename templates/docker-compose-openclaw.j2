@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     # Geen 'ports:'-mapping meer!
     environment:
-      - OLLAMA_BASE_URL={{ inference_base_url | default('http://host.docker.internal:11434') }}
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - OPENCLAW_WORKSPACE=/app/workspace
     volumes:
       - /var/lib/openclaw-data:/app/workspace

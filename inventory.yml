@@ -22,10 +22,6 @@ all:
     elk_version: 9.5.5
     jdtls_version: 1.54.0
     
-    # AI agents (hermes, openclaw; disabled in setup.yml): Ollama-compatible inference system they should use,
-    # for example multiberry or mikmakmuk. Not set: the templates fall back to host.docker.internal:11434.
-    # inference_base_url: "http://multiberry.example:11434"
-
     # Lemonade Server Parameters
     lemonade_port: 13305
     lemonade_host: "0.0.0.0"

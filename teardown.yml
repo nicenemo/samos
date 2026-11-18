@@ -1,7 +1,7 @@
 #!/usr/bin/env ansible-playbook
 ---
 # =============================================================================
-# 1. AI Agents Teardown (counterpart of the disabled agents in setup.yml)
+# 1. AI Agents Teardown
 # =============================================================================
 
 #- name: Import Openclaw Teardown

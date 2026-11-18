@@ -44,8 +44,6 @@
 
 # -----------------------------------------------------------------------------
 # 4. AI Agents Setup
-# Disabled on purpose: samos runs no Ollama. Enable them when `inference_base_url` (inventory.yml) points to an
-# inference system such as multiberry or mikmakmuk.
 # -----------------------------------------------------------------------------
 #- name: Import Hermes Setup
 #  ansible.builtin.import_playbook: playbooks/hermes-setup.yml
