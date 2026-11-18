@@ -17,6 +17,7 @@ all:
       - yamllint
       - markdownlint-cli2
       - hugo
+      - jekyll
     firestorm_users:
       - kruse
       - giesen
